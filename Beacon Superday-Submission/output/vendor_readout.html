@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Beacon Vendor Readout</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;600&display=swap"><style>body{margin:0}
+/* Layout: single reading column (answer first), tables scroll inside their own frames */
+:root {
+  --bg: #f6f7f8; --panel: #ffffff; --ink: #15191e; --ink-2: #4b5560; --ink-3: #7a848f;
+  --rule: #dde1e5; --grid: #e8ebee; --accent: #b4441a;
+  --s1: #2a78d6; --s2: #eb6834; --muted-bar: #b9c0c7; --flag-bg: #fdf1ea;
+  --font-display: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --font-body: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+  --font-data: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #121417; --panel: #1b1e22; --ink: #eef0f2; --ink-2: #b7bfc7; --ink-3: #8a939c;
+  --rule: #2f343a; --grid: #262a2f; --accent: #f08a5d;
+  --s1: #3987e5; --s2: #d95926; --muted-bar: #4d555d; --flag-bg: #2a1d17; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #121417; --panel: #1b1e22; --ink: #eef0f2; --ink-2: #b7bfc7; --ink-3: #8a939c;
+  --rule: #2f343a; --grid: #262a2f; --accent: #f08a5d;
+  --s1: #3987e5; --s2: #d95926; --muted-bar: #4d555d; --flag-bg: #2a1d17; color-scheme: dark; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.55; }
+.wrap { max-width: 960px; margin: 0 auto; padding-inline: 20px; padding-block: 32px 64px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 40px; }
+.wrap > * { min-width: 0; }
+.eyebrow { overflow-wrap: anywhere; }
+header { display: grid; gap: 6px; border-bottom: 2px solid var(--ink); padding-bottom: 16px; }
+.eyebrow { font-family: var(--font-data); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(28px, 5vw, 40px); line-height: 1.1; margin: 0; letter-spacing: -.01em; text-wrap: balance; }
+h2 { font-family: var(--font-display); font-weight: 700; font-size: 22px; margin: 0; text-wrap: balance; }
+h3 { font-family: var(--font-display); font-weight: 700; font-size: 16px; margin: 0; }
+p { margin: 0; max-width: 70ch; }
+.sub { color: var(--ink-2); }
+section { display: grid; gap: 14px; min-width: 0; }
+.answer { background: var(--panel); border: 1px solid var(--rule); border-left: 5px solid var(--accent); padding: 22px 24px; display: grid; gap: 14px; }
+.answer h2 { font-size: 26px; color: var(--ink); }
+.answer ul, .plain ul { margin: 0; padding-left: 20px; display: grid; gap: 8px; }
+.cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+.cols > div { min-width: 0; display: grid; gap: 8px; align-content: start; }
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1px; background: var(--rule); border: 1px solid var(--rule); }
+.kpi { background: var(--panel); padding: 14px 16px; display: grid; gap: 2px; }
+.kpi .n { font-family: var(--font-data); font-size: 24px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.kpi .l { font-size: 12.5px; color: var(--ink-2); }
+.figure { background: var(--panel); border: 1px solid var(--rule); padding: 16px; overflow-x: auto; }
+.figure svg { width: 100%; height: auto; min-width: 520px; display: block; }
+.cap { font-size: 13px; color: var(--ink-3); }
+svg text { font-family: var(--font-data); }
+svg .grid { stroke: var(--grid); stroke-width: 1; }
+svg .base { stroke: var(--ink-3); stroke-width: 1; }
+svg .ax { fill: var(--ink-3); font-size: 11px; }
+svg .val { fill: var(--ink-2); font-size: 11px; }
+svg .lab { fill: var(--ink-2); font-size: 12.5px; font-family: var(--font-body); }
+svg .lab.strong { fill: var(--ink); font-weight: 600; }
+svg .bar { fill: var(--s1); }
+svg .bar.partial { fill: var(--s1); opacity: .45; }
+svg .bar.hi { fill: var(--s2); }
+svg .bar.lo { fill: var(--muted-bar); }
+svg .line { fill: none; stroke-width: 2; }
+svg .line.s1 { stroke: var(--s1); } svg .line.s2 { stroke: var(--s2); }
+svg .dot { stroke: var(--panel); stroke-width: 2; }
+svg .dot.s1 { fill: var(--s1); } svg .dot.s2 { fill: var(--s2); }
+svg .s1-t, svg .s2-t { fill: var(--ink-2); }
+svg g:hover path, svg g:hover circle { opacity: .8; }
+.tbl { overflow-x: auto; background: var(--panel); border: 1px solid var(--rule); }
+table { border-collapse: collapse; width: 100%; font-size: 13px; }
+th, td { padding: 7px 10px; text-align: right; border-bottom: 1px solid var(--grid); white-space: nowrap; font-variant-numeric: tabular-nums; }
+th { font-weight: 600; color: var(--ink-2); background: var(--bg); font-size: 12px; vertical-align: bottom; white-space: normal; }
+th:first-child, td:first-child { text-align: left; }
+td.num { font-family: var(--font-data); font-size: 12.5px; }
+tr.flag td { background: var(--flag-bg); }
+tr.total td { font-weight: 600; border-top: 1px solid var(--ink-3); }
+td.txt, th.txt { white-space: normal; text-align: left; min-width: 220px; }
+.legend { display: flex; flex-wrap: wrap; gap: 16px; font-size: 13px; color: var(--ink-2); }
+.legend span::before { content: ""; display: inline-block; width: 12px; height: 3px; margin-right: 6px; vertical-align: middle; }
+.legend .k1::before { background: var(--s1); } .legend .k2::before { background: var(--s2); }
+.note { font-size: 13.5px; color: var(--ink-2); }
+code { font-family: var(--font-data); font-size: 12.5px; }
+details { background: var(--panel); border: 1px solid var(--rule); padding: 12px 16px; }
+summary { cursor: pointer; font-weight: 600; }
+summary:focus-visible, a:focus-visible { outline: 2px solid var(--s1); outline-offset: 2px; }
+dl { display: grid; grid-template-columns: minmax(140px, 220px) 1fr; gap: 6px 16px; margin: 12px 0 0; font-size: 13.5px; }
+dt { font-weight: 600; } dd { margin: 0; color: var(--ink-2); min-width: 0; }
+@media (max-width: 560px) { dl { grid-template-columns: 1fr; } .answer { padding: 18px; } }
+</style></head><body>
+<div class="wrap">
+<header>
+  <div class="eyebrow">Tinicum FDE case study &middot; "Beacon Fasteners" &middot; ERP history Sep 2025 – May 2026 &middot; as of 05/17/2026</div>
+  <h1>Vendor performance readout</h1>
+  <p class="sub">Six active vendors, 672 POs, 915 delivered PO lines scored. Built from the ERP extract after correcting its data problems (listed at the end).</p>
+</header>
+
+<section class="answer" aria-labelledby="a1">
+  <div class="eyebrow">The phone call</div>
+  <h2 id="a1">Call Continental Quality Heat Treat first</h2>
+  <ul><li><b>Late most often:</b> 42% of 134 due lines arrived on time. The other five vendors range from 69% to 99%.</li><li><b>Late by the most:</b> 61 of the 63 lines that arrived more than 7 days late across all vendors are Continental's ($660k of $666k received value). When late, the median delay is 17 days (worst 28). Every other vendor lands 99% or more of its lines within 7 days.</li><li><b>Warns it will be late, then misses its own date too:</b> 91% of its confirmations promise a date after our required date (avg +8.5 days; other vendors avg +0.2 to +2.6). It then meets only 58% of its own promises.</li><li><b>Not getting better:</b> 45% on time for lines due Sep–Dec (n=56) vs 40% for Jan–May (n=78). It has been consistently poor, not a recent slip.</li><li><b>Material:</b> $1.51M received (5.4% of spend) in outside heat-treat services. 7 open lines are past due today ($14k).</li></ul>
+  <div class="cols">
+    <div><h3>What to ask them</h3><ul class="note"><li>Our planned lead time for heat treat is 19 days from PO; you quote 28 and deliver in 24.5 (medians). Can you commit to a standard lead time we can load into MRP?</li><li>When you do confirm a date, you meet it 58% of the time. What is driving the misses: furnace capacity, batching, or incoming parts?</li><li>Split shipments: 51% of lines come in more than one shipment. Can partial lots be avoided or flagged?</li></ul></div>
+    <div><h3>What to fix on our side</h3><p class="note">Beacon side: our 19-day heat-treat lead time is about 9 days shorter than what Continental quotes. Part of this lateness is ours to fix in planning.</p></div>
+  </div>
+</section>
+
+<section class="plain">
+  <h2>Second call, and who to watch</h2>
+  <p><b>Apex Bar & Tube Co.: the dollar and commercial conversation, not a delivery one.</b> 85% of all received value ($23.98M). On time 87%, but when late the median is 1 day and 0 lines were more than 7 days late. The issues: (1) BAR-CRES-250 confirmed at +1% from Feb and +2% from Mar while every PO stayed at $3.92: 11 lines, $8,522 over PO on ordered qty, and nothing in the ERP captures it. (2) 8 short-shipped balances left open ($77k, the largest past-due exposure of any vendor). (3) This week's acknowledgments show the same pattern: a dropped line, a short and a +2.3% price.</p>
+  <ul><li><b>Heritage Cold Heading:</b> on time 72%, and 60% of promises are after our need date (avg +2.6 days). Delays are short (median 3 days, 2 lines over 7 days). 10 short-shipped balances are still open.</li><li><b>Liberty Surface Finishing:</b> slipping from 95% (Sep–Dec) to 87% (Jan–May). The change is not statistically significant (p=0.13) and misses are 1–3 days, so watch it rather than call.</li><li><b>Ostmark Werkzeug GmbH:</b> on time 69% but never more than 6 days late. Watch the open die-set order PO-4500050027 (25 x TOOL-DIE-9472, $31k, due 05/15, nothing received). This week's acknowledgment gives only 'KW 20-22'.</li><li><b>QuickShip Industrial:</b> the benchmark at 99% on time, but only $13k of spend.</li></ul>
+</section>
+
+<section>
+  <div class="kpis">
+    <div class="kpi"><span class="n">$28.19M</span><span class="l">received at PO price, 8.5 months</span></div>
+    <div class="kpi"><span class="n">85%</span><span class="l">of it from Apex (bar stock)</span></div>
+    <div class="kpi"><span class="n">78%</span><span class="l">of due lines complete on time, all vendors</span></div>
+    <div class="kpi"><span class="n">63</span><span class="l">lines &gt;7 days late: 61 are Continental</span></div>
+  </div>
+</section>
+
+<section>
+  <h2>Received value by month</h2>
+  <p class="sub">Net receipts (reversals removed) at PO unit price, in USD. Apex is 85% of the total, so the monthly shape is mostly Apex's bar-stock deliveries.</p>
+  <div class="figure"><svg viewBox="0 0 720 280" role="img" aria-label="Received value by month">
+<line x1="64" x2="704" y1="236.0" y2="236.0" class="grid"/>
+<text x="56" y="240.0" class="ax" text-anchor="end">$0M</text>
+<line x1="64" x2="704" y1="199.3" y2="199.3" class="grid"/>
+<text x="56" y="203.3" class="ax" text-anchor="end">$1M</text>
+<line x1="64" x2="704" y1="162.7" y2="162.7" class="grid"/>
+<text x="56" y="166.7" class="ax" text-anchor="end">$2M</text>
+<line x1="64" x2="704" y1="126.0" y2="126.0" class="grid"/>
+<text x="56" y="130.0" class="ax" text-anchor="end">$3M</text>
+<line x1="64" x2="704" y1="89.3" y2="89.3" class="grid"/>
+<text x="56" y="93.3" class="ax" text-anchor="end">$4M</text>
+<line x1="64" x2="704" y1="52.7" y2="52.7" class="grid"/>
+<text x="56" y="56.7" class="ax" text-anchor="end">$5M</text>
+<line x1="64" x2="704" y1="16.0" y2="16.0" class="grid"/>
+<text x="56" y="20.0" class="ax" text-anchor="end">$6M</text>
+<g><title>Sep 25: $114k (partial: from 09/06)</title><path class="bar partial" d="M67.0,236.0 v-0.2 a4,4 0 0 1 4,-4 h57.1 a4,4 0 0 1 4,4 v0.2 z"/></g>
+<text x="99.6" y="254" class="ax" text-anchor="middle">Sep 25*</text>
+<text x="99.6" y="225.8" class="val" text-anchor="middle">0.1</text>
+<g><title>Oct 25: $3.53M</title><path class="bar" d="M138.1,236.0 v-125.6 a4,4 0 0 1 4,-4 h57.1 a4,4 0 0 1 4,4 v125.6 z"/></g>
+<text x="170.7" y="254" class="ax" text-anchor="middle">Oct 25</text>
+<text x="170.7" y="100.4" class="val" text-anchor="middle">3.5</text>
+<g><title>Nov 25: $4.79M</title><path class="bar" d="M209.2,236.0 v-171.5 a4,4 0 0 1 4,-4 h57.1 a4,4 0 0 1 4,4 v171.5 z"/></g>
+<text x="241.8" y="254" class="ax" text-anchor="middle">Nov 25</text>
+<text x="241.8" y="54.5" class="val" text-anchor="middle">4.8</text>
+<g><title>Dec 25: $3.67M</title><path class="bar" d="M280.3,236.0 v-130.5 a4,4 0 0 1 4,-4 h57.1 a4,4 0 0 1 4,4 v130.5 z"/></g>
+<text x="312.9" y="254" class="ax" text-anchor="middle">Dec 25</text>
+<text x="312.9" y="95.5" class="val" text-anchor="middle">3.7</text>
+<g><title>Jan 26: $5.09M</title><path class="bar" d="M351.4,236.0 v-182.7 a4,4 0 0 1 4,-4 h57.1 a4,4 0 0 1 4,4 v182.7 z"/></g>
+<text x="384.0" y="254" class="ax" text-anchor="middle">Jan 26</text>
+<text x="384.0" y="43.3" class="val" text-anchor="middle">5.1</text>
+<g><title>Feb 26: $3.13M</title><path class="bar" d="M422.6,236.0 v-110.6 a4,4 0 0 1 4,-4 h57.1 a4,4 0 0 1 4,4 v110.6 z"/></g>
+<text x="455.1" y="254" class="ax" text-anchor="middle">Feb 26</text>
+<text x="455.1" y="115.4" class="val" text-anchor="middle">3.1</text>
+<g><title>Mar 26: $3.72M</title><path class="bar" d="M493.7,236.0 v-132.5 a4,4 0 0 1 4,-4 h57.1 a4,4 0 0 1 4,4 v132.5 z"/></g>
+<text x="526.2" y="254" class="ax" text-anchor="middle">Mar 26</text>
+<text x="526.2" y="93.5" class="val" text-anchor="middle">3.7</text>
+<g><title>Apr 26: $3.22M</title><path class="bar" d="M564.8,236.0 v-114.2 a4,4 0 0 1 4,-4 h57.1 a4,4 0 0 1 4,4 v114.2 z"/></g>
+<text x="597.3" y="254" class="ax" text-anchor="middle">Apr 26</text>
+<text x="597.3" y="111.8" class="val" text-anchor="middle">3.2</text>
+<g><title>May 26: $921k (partial: to 05/17)</title><path class="bar partial" d="M635.9,236.0 v-29.8 a4,4 0 0 1 4,-4 h57.1 a4,4 0 0 1 4,4 v29.8 z"/></g>
+<text x="668.4" y="254" class="ax" text-anchor="middle">May 26*</text>
+<text x="668.4" y="196.2" class="val" text-anchor="middle">0.9</text>
+<line x1="64" x2="704" y1="236.0" y2="236.0" class="base"/>
+</svg>
+  <p class="cap">* Partial months: data starts 09/06/2025 and ends 05/17/2026. Values in $M.</p></div>
+  <div class="tbl"><table><thead><tr><th>Month</th><th>Apex</th><th>Heritage</th><th>Liberty</th><th>Continental</th><th>Ostmark</th><th>QuickShip</th><th>Total</th><th>Receipts</th></tr></thead><tbody><tr><td>Sep 2025 *</td><td class='num'>$0</td><td class='num'>$49k</td><td class='num'>$9,384</td><td class='num'>$55k</td><td class='num'>$0</td><td class='num'>$1,099</td><td class='num'><b>$114k</b></td><td class='num'>56</td></tr><tr><td>Oct 2025</td><td class='num'>$3.08M</td><td class='num'>$200k</td><td class='num'>$18k</td><td class='num'>$233k</td><td class='num'>$55</td><td class='num'>$1,999</td><td class='num'><b>$3.53M</b></td><td class='num'>179</td></tr><tr><td>Nov 2025</td><td class='num'>$4.34M</td><td class='num'>$198k</td><td class='num'>$15k</td><td class='num'>$116k</td><td class='num'>$116k</td><td class='num'>$1,438</td><td class='num'><b>$4.79M</b></td><td class='num'>193</td></tr><tr><td>Dec 2025</td><td class='num'>$2.94M</td><td class='num'>$293k</td><td class='num'>$10k</td><td class='num'>$211k</td><td class='num'>$210k</td><td class='num'>$1,997</td><td class='num'><b>$3.67M</b></td><td class='num'>202</td></tr><tr><td>Jan 2026</td><td class='num'>$4.49M</td><td class='num'>$239k</td><td class='num'>$13k</td><td class='num'>$171k</td><td class='num'>$178k</td><td class='num'>$1,663</td><td class='num'><b>$5.09M</b></td><td class='num'>172</td></tr><tr><td>Feb 2026</td><td class='num'>$2.59M</td><td class='num'>$192k</td><td class='num'>$13k</td><td class='num'>$210k</td><td class='num'>$124k</td><td class='num'>$1,644</td><td class='num'><b>$3.13M</b></td><td class='num'>175</td></tr><tr><td>Mar 2026</td><td class='num'>$3.15M</td><td class='num'>$228k</td><td class='num'>$13k</td><td class='num'>$227k</td><td class='num'>$100k</td><td class='num'>$1,114</td><td class='num'><b>$3.72M</b></td><td class='num'>202</td></tr><tr><td>Apr 2026</td><td class='num'>$2.72M</td><td class='num'>$197k</td><td class='num'>$13k</td><td class='num'>$160k</td><td class='num'>$136k</td><td class='num'>$1,755</td><td class='num'><b>$3.22M</b></td><td class='num'>185</td></tr><tr><td>May 2026 *</td><td class='num'>$672k</td><td class='num'>$116k</td><td class='num'>$4,359</td><td class='num'>$125k</td><td class='num'>$3,517</td><td class='num'>$539</td><td class='num'><b>$921k</b></td><td class='num'>81</td></tr><tr class='total'><td>Total</td><td class='num'>$23.98M</td><td class='num'>$1.71M</td><td class='num'>$108k</td><td class='num'>$1.51M</td><td class='num'>$867k</td><td class='num'>$13k</td><td class='num'>$28.19M</td><td class='num'>1445</td></tr></tbody></table></div>
+</section>
+
+<section>
+  <h2>Vendor by vendor</h2>
+  <p class="sub">Relative rates and absolute counts side by side. A vendor late on many low-value lines differs from one late on a few critical ones. Continental is highlighted.</p>
+  <div class="figure"><svg viewBox="0 0 720 244" role="img" aria-label="On-time delivery by vendor">
+<line x1="190.0" x2="190.0" y1="10" y2="220" class="grid"/>
+<text x="190.0" y="236" class="ax" text-anchor="middle">0%</text>
+<line x1="305.0" x2="305.0" y1="10" y2="220" class="grid"/>
+<text x="305.0" y="236" class="ax" text-anchor="middle">25%</text>
+<line x1="420.0" x2="420.0" y1="10" y2="220" class="grid"/>
+<text x="420.0" y="236" class="ax" text-anchor="middle">50%</text>
+<line x1="535.0" x2="535.0" y1="10" y2="220" class="grid"/>
+<text x="535.0" y="236" class="ax" text-anchor="middle">75%</text>
+<line x1="650.0" x2="650.0" y1="10" y2="220" class="grid"/>
+<text x="650.0" y="236" class="ax" text-anchor="middle">100%</text>
+<text x="180" y="31.0" class="lab strong" text-anchor="end">Continental Quality Heat Treat</text>
+<g><title>Continental Quality Heat Treat: 41.8% on time (56 of 134 due lines); 61 lines &gt;7 days late</title><path class="bar hi" d="M190.0,16.0 h188.2 a4,4 0 0 1 4,4 v14 a4,4 0 0 1 -4,4 h-188.2 z"/></g>
+<text x="390.2" y="31.0" class="val" text-anchor="start">42%</text>
+<text x="180" y="65.0" class="lab" text-anchor="end">Ostmark Werkzeug GmbH</text>
+<g><title>Ostmark Werkzeug GmbH: 69.1% on time (38 of 55 due lines); 0 lines &gt;7 days late</title><path class="bar lo" d="M190.0,50.0 h313.8 a4,4 0 0 1 4,4 v14 a4,4 0 0 1 -4,4 h-313.8 z"/></g>
+<text x="515.8" y="65.0" class="val" text-anchor="start">69%</text>
+<text x="180" y="99.0" class="lab" text-anchor="end">Heritage Cold Heading</text>
+<g><title>Heritage Cold Heading: 72.2% on time (148 of 205 due lines); 2 lines &gt;7 days late</title><path class="bar lo" d="M190.0,84.0 h328.1 a4,4 0 0 1 4,4 v14 a4,4 0 0 1 -4,4 h-328.1 z"/></g>
+<text x="530.1" y="99.0" class="val" text-anchor="start">72%</text>
+<text x="180" y="133.0" class="lab" text-anchor="end">Apex Bar &amp; Tube Co.</text>
+<g><title>Apex Bar &amp; Tube Co.: 86.9% on time (193 of 222 due lines); 0 lines &gt;7 days late</title><path class="bar lo" d="M190.0,118.0 h395.9 a4,4 0 0 1 4,4 v14 a4,4 0 0 1 -4,4 h-395.9 z"/></g>
+<text x="597.9" y="133.0" class="val" text-anchor="start">87%</text>
+<text x="180" y="167.0" class="lab" text-anchor="end">Liberty Surface Finishing</text>
+<g><title>Liberty Surface Finishing: 91.0% on time (172 of 189 due lines); 0 lines &gt;7 days late</title><path class="bar lo" d="M190.0,152.0 h414.6 a4,4 0 0 1 4,4 v14 a4,4 0 0 1 -4,4 h-414.6 z"/></g>
+<text x="616.6" y="167.0" class="val" text-anchor="start">91%</text>
+<text x="180" y="201.0" class="lab" text-anchor="end">QuickShip Industrial</text>
+<g><title>QuickShip Industrial: 99.1% on time (109 of 110 due lines); 0 lines &gt;7 days late</title><path class="bar lo" d="M190.0,186.0 h451.8 a4,4 0 0 1 4,4 v14 a4,4 0 0 1 -4,4 h-451.8 z"/></g>
+<text x="653.8" y="201.0" class="val" text-anchor="start">99%</text>
+</svg><p class="cap">On time = the receipt that completes the line arrives on/before the required date. Grey = other vendors.</p></div>
+  <div class="tbl"><table><thead><tr><th>Vendor</th><th>Received value</th><th>Share</th><th>Due lines</th><th>On time</th><th>Lines &gt;7d late</th><th>$ &gt;7d late</th><th>Median days late (when late)</th><th>Promised after need</th><th>Met own promise</th><th>Past-due open $</th><th>Price above PO $ (lines)</th><th>QC holds (open)</th></tr></thead><tbody><tr><td>Apex Bar &amp; Tube Co.</td><td class="num">$23.98M</td><td class="num">85.1%</td><td class="num">222</td><td class="num">87%</td><td class="num">0</td><td class="num">$0</td><td class="num">1</td><td class="num">19%</td><td class="num">89%</td><td class="num">$77k</td><td class="num">$8,522 (11)</td><td class="num">9 (2)</td></tr><tr><td>Heritage Cold Heading</td><td class="num">$1.71M</td><td class="num">6.1%</td><td class="num">205</td><td class="num">72%</td><td class="num">2</td><td class="num">$5,434</td><td class="num">3</td><td class="num">60%</td><td class="num">82%</td><td class="num">$4,135</td><td class="num">–</td><td class="num">7 (0)</td></tr><tr class="flag"><td>Continental Quality Heat Treat</td><td class="num">$1.51M</td><td class="num">5.4%</td><td class="num">134</td><td class="num">42%</td><td class="num">61</td><td class="num">$660k</td><td class="num">17</td><td class="num">91%</td><td class="num">58%</td><td class="num">$14k</td><td class="num">–</td><td class="num">7 (1)</td></tr><tr><td>Ostmark Werkzeug GmbH</td><td class="num">$867k</td><td class="num">3.1%</td><td class="num">55</td><td class="num">69%</td><td class="num">0</td><td class="num">$0</td><td class="num">2</td><td class="num">20%</td><td class="num">71%</td><td class="num">$32k</td><td class="num">–</td><td class="num">3 (0)</td></tr><tr><td>Liberty Surface Finishing</td><td class="num">$108k</td><td class="num">0.4%</td><td class="num">189</td><td class="num">91%</td><td class="num">0</td><td class="num">$0</td><td class="num">1</td><td class="num">20%</td><td class="num">94%</td><td class="num">$1,136</td><td class="num">–</td><td class="num">8 (0)</td></tr><tr><td>QuickShip Industrial</td><td class="num">$13k</td><td class="num">0.0%</td><td class="num">110</td><td class="num">99%</td><td class="num">0</td><td class="num">$0</td><td class="num">1</td><td class="num">16%</td><td class="num">99%</td><td class="num">$39</td><td class="num">–</td><td class="num">1 (1)</td></tr></tbody></table></div>
+  <p class="note">Apex has the most dollars received late ($2.51M), because it is 85% of spend. Its late lines are late by a median of 1 day and none exceeds 6 days. Continental's late lines run a median of 17 days. That is why severity, and not raw late dollars, drives the call order.</p>
+</section>
+
+<section>
+  <h2>Is anyone getting worse?</h2>
+  <div class="figure"><svg viewBox="0 0 720 260" role="img" aria-label="Monthly on-time trend">
+<line x1="48" x2="600" y1="224.0" y2="224.0" class="grid"/>
+<text x="40" y="228.0" class="ax" text-anchor="end">0%</text>
+<line x1="48" x2="600" y1="171.5" y2="171.5" class="grid"/>
+<text x="40" y="175.5" class="ax" text-anchor="end">25%</text>
+<line x1="48" x2="600" y1="119.0" y2="119.0" class="grid"/>
+<text x="40" y="123.0" class="ax" text-anchor="end">50%</text>
+<line x1="48" x2="600" y1="66.5" y2="66.5" class="grid"/>
+<text x="40" y="70.5" class="ax" text-anchor="end">75%</text>
+<line x1="48" x2="600" y1="14.0" y2="14.0" class="grid"/>
+<text x="40" y="18.0" class="ax" text-anchor="end">100%</text>
+<text x="48.0" y="248" class="ax" text-anchor="middle">Sep</text>
+<text x="117.0" y="248" class="ax" text-anchor="middle">Oct</text>
+<text x="186.0" y="248" class="ax" text-anchor="middle">Nov</text>
+<text x="255.0" y="248" class="ax" text-anchor="middle">Dec</text>
+<text x="324.0" y="248" class="ax" text-anchor="middle">Jan</text>
+<text x="393.0" y="248" class="ax" text-anchor="middle">Feb</text>
+<text x="462.0" y="248" class="ax" text-anchor="middle">Mar</text>
+<text x="531.0" y="248" class="ax" text-anchor="middle">Apr</text>
+<text x="600.0" y="248" class="ax" text-anchor="middle">May</text>
+<polyline class="line s1" points="48.0,24.0 117.0,44.6 186.0,53.5 255.0,41.3 324.0,56.4 393.0,36.6 462.0,54.0 531.0,46.1 600.0,43.3"/>
+<g><title>All other vendors, lines due Sep 2025: 95% on time (n=21)</title><circle class="dot s1" cx="48.0" cy="24.0" r="4.5"/></g>
+<g><title>All other vendors, lines due Oct 2025: 85% on time (n=103)</title><circle class="dot s1" cx="117.0" cy="44.6" r="4.5"/></g>
+<g><title>All other vendors, lines due Nov 2025: 81% on time (n=101)</title><circle class="dot s1" cx="186.0" cy="53.5" r="4.5"/></g>
+<g><title>All other vendors, lines due Dec 2025: 87% on time (n=123)</title><circle class="dot s1" cx="255.0" cy="41.3" r="4.5"/></g>
+<g><title>All other vendors, lines due Jan 2026: 80% on time (n=94)</title><circle class="dot s1" cx="324.0" cy="56.4" r="4.5"/></g>
+<g><title>All other vendors, lines due Feb 2026: 89% on time (n=93)</title><circle class="dot s1" cx="393.0" cy="36.6" r="4.5"/></g>
+<g><title>All other vendors, lines due Mar 2026: 81% on time (n=105)</title><circle class="dot s1" cx="462.0" cy="54.0" r="4.5"/></g>
+<g><title>All other vendors, lines due Apr 2026: 85% on time (n=98)</title><circle class="dot s1" cx="531.0" cy="46.1" r="4.5"/></g>
+<g><title>All other vendors, lines due May 2026: 86% on time (n=43)</title><circle class="dot s1" cx="600.0" cy="43.3" r="4.5"/></g>
+<text x="610.0" y="47.3" class="lab s1-t">All other vendors</text>
+<polyline class="line s2" points="48.0,145.2 117.0,88.1 186.0,127.1 255.0,165.7 324.0,112.8 393.0,184.6 462.0,124.0 531.0,126.0 600.0,177.3"/>
+<g><title>Continental, lines due Sep 2025: 38% on time (n=8)</title><circle class="dot s2" cx="48.0" cy="145.2" r="4.5"/></g>
+<g><title>Continental, lines due Oct 2025: 65% on time (n=17)</title><circle class="dot s2" cx="117.0" cy="88.1" r="4.5"/></g>
+<g><title>Continental, lines due Nov 2025: 46% on time (n=13)</title><circle class="dot s2" cx="186.0" cy="127.1" r="4.5"/></g>
+<g><title>Continental, lines due Dec 2025: 28% on time (n=18)</title><circle class="dot s2" cx="255.0" cy="165.7" r="4.5"/></g>
+<g><title>Continental, lines due Jan 2026: 53% on time (n=17)</title><circle class="dot s2" cx="324.0" cy="112.8" r="4.5"/></g>
+<g><title>Continental, lines due Feb 2026: 19% on time (n=16)</title><circle class="dot s2" cx="393.0" cy="184.6" r="4.5"/></g>
+<g><title>Continental, lines due Mar 2026: 48% on time (n=21)</title><circle class="dot s2" cx="462.0" cy="124.0" r="4.5"/></g>
+<g><title>Continental, lines due Apr 2026: 47% on time (n=15)</title><circle class="dot s2" cx="531.0" cy="126.0" r="4.5"/></g>
+<g><title>Continental, lines due May 2026: 22% on time (n=9)</title><circle class="dot s2" cx="600.0" cy="177.3" r="4.5"/></g>
+<text x="610.0" y="181.3" class="lab s2-t">Continental</text>
+</svg>
+  <div class="legend"><span class="k2">Continental</span><span class="k1">All other vendors</span></div>
+  <p class="cap">Share of lines complete on time, by the month the line was due. Hover a point for n.</p></div>
+  <p class="note">No vendor shows a statistically significant change between Sep–Dec and Jan–May (Fisher exact test, all p &gt; 0.1). Continental is flat at a low level. Liberty dipped from 95% to 87% (p=0.13).</p>
+</section>
+
+<section>
+  <h2>Continental in detail</h2>
+  <div class="cols">
+    <div><h3>By heat-treat service</h3><div class="tbl"><table><thead><tr><th>Service</th><th>Due lines</th><th>On time</th><th>Avg days late (when late)</th></tr></thead><tbody><tr><td>HT-PRECIP <span class='cap'>Precipitation harden, per piece</span></td><td class='num'>43</td><td class='num'>40%</td><td class='num'>16.8</td></tr><tr><td>HT-SOLN <span class='cap'>Solution treat, per piece</span></td><td class='num'>46</td><td class='num'>33%</td><td class='num'>13.9</td></tr><tr><td>HT-STRESS <span class='cap'>Stress relieve, per piece</span></td><td class='num'>45</td><td class='num'>53%</td><td class='num'>16.1</td></tr></tbody></table></div><p class="cap">Lateness shows up in all three services, not just one.</p></div>
+    <div><h3>Lead time, median days from PO date</h3><div class="tbl"><table><thead><tr><th>Vendor</th><th>We allow</th><th>Vendor quotes</th><th>Actual</th></tr></thead><tbody><tr><td>Apex Bar &amp; Tube Co.</td><td class='num'>42 days</td><td class='num'>42 days</td><td class='num'>40 days</td></tr><tr><td>Heritage Cold Heading</td><td class='num'>33 days</td><td class='num'>36 days</td><td class='num'>32 days</td></tr><tr><td>Liberty Surface Finishing</td><td class='num'>18 days</td><td class='num'>18 days</td><td class='num'>15 days</td></tr><tr class="flag"><td>Continental Quality Heat Treat</td><td class='num'>19 days</td><td class='num'>28 days</td><td class='num'>24.5 days</td></tr><tr><td>Ostmark Werkzeug GmbH</td><td class='num'>63 days</td><td class='num'>63 days</td><td class='num'>61 days</td></tr><tr><td>QuickShip Industrial</td><td class='num'>9 days</td><td class='num'>9 days</td><td class='num'>6 days</td></tr></tbody></table></div><p class="cap">Other vendors quote within 3 days of the lead time we plan with. Continental quotes 9 days longer, and delivers about 5 days later than we plan.</p></div>
+  </div>
+</section>
+
+<section>
+  <h2>Apex price creep on CRES 17-4 bar</h2>
+  <p class="sub">The only vendor confirming above PO price. Every Apex part other than BAR-CRES-250 confirms at PO price. Receipts carry no price and there is no invoice table in this extract, so the ERP does not record this increase anywhere. AP will meet it on the invoice.</p>
+  <div class="tbl"><table><thead><tr><th>Confirmation month</th><th>Lines above PO</th><th>Confirmed price</th><th>PO price</th><th>Exposure (ordered qty)</th></tr></thead><tbody><tr><td>Feb 2026</td><td class='num'>4</td><td class='num'>$3.9592</td><td class='num'>$3.9200</td><td class='num'>$1811.04</td></tr><tr><td>Mar 2026</td><td class='num'>6</td><td class='num'>$3.9984</td><td class='num'>$3.9200</td><td class='num'>$5550.72</td></tr><tr><td>Apr 2026</td><td class='num'>1</td><td class='num'>$3.9984</td><td class='num'>$3.9200</td><td class='num'>$1160.32</td></tr></tbody></table></div>
+</section>
+
+<section>
+  <h2>Vendor part numbers: the cleanup, started</h2>
+  <p>Two vendors confirm with their own part numbers (241 confirmation rows have a vendor PN and no Beacon part). Joining each back to its PO line recovers a crosswalk. The history exposes three problems a cleanup has to design for:</p>
+  <ul class="note">
+    <li><b>The same vendor PN means different parts at different vendors.</b> <code>K-1050</code> is a cold-headed pin blank at Heritage and a heading punch at Ostmark, so the key must be vendor + vendor PN.</li>
+    <li><b>Vendors renumber.</b> This week's PDFs use <code>APH-441-OS</code> and <code>OST-CAR-A-100</code> for parts the ERP knows as <code>APH-4411</code> and <code>WZ-HM-EIN</code>. A mapping needs first-seen/last-seen dates and a review status, not just a lookup.</li>
+    <li><b>Look-alikes are real.</b> <code>APH-441</code> and <code>APH-4411</code> are two different blanks (9472-3 vs 9472-4), so fuzzy matching on PNs would merge them. Mappings are proposed from qty and price evidence and approved by a person.</li>
+  </ul>
+  <div class="tbl"><table><thead><tr><th>Vendor</th><th>Vendor PN</th><th>Beacon PN</th><th>Source</th><th class='txt'>Status / note</th></tr></thead><tbody><tr class="flag"><td>Heritage Cold Heading</td><td class='num'>APH-441-OS</td><td class='num'>CHB-9472-4</td><td class='txt'>This week&#x27;s PDF (inferred by qty+price)</td><td class='txt'>PENDING REVIEW. ERP history uses APH-4411 for this part: vendor renumbered?</td></tr><tr class="flag"><td>Ostmark Werkzeug GmbH</td><td class='num'>OST-CAR-A-100</td><td class='num'>TOOL-INS-CAR</td><td class='txt'>This week&#x27;s PDF (inferred by qty+price)</td><td class='txt'>PENDING REVIEW. ERP history uses WZ-HM-EIN for this part: vendor renumbered?</td></tr><tr><td>Heritage Cold Heading</td><td class='num'>APH-125</td><td class='num'>CHB-3301</td><td class='txt'>ERP confirmations joined to PO lines</td><td class='txt'>Seen 36 times, 2025-09-04 to 2026-03-19</td></tr><tr><td>Heritage Cold Heading</td><td class='num'>APH-318</td><td class='num'>CHB-7715</td><td class='txt'>ERP confirmations joined to PO lines</td><td class='txt'>Seen 44 times, 2025-09-17 to 2026-04-03</td></tr><tr><td>Heritage Cold Heading</td><td class='num'>APH-441</td><td class='num'>CHB-9472-3</td><td class='txt'>ERP confirmations joined to PO lines</td><td class='txt'>Seen 30 times, 2025-09-10 to 2026-04-02</td></tr><tr><td>Heritage Cold Heading</td><td class='num'>APH-4411</td><td class='num'>CHB-9472-4</td><td class='txt'>ERP confirmations joined to PO lines</td><td class='txt'>Seen 35 times, 2025-09-04 to 2026-03-22</td></tr><tr><td>Heritage Cold Heading</td><td class='num'>K-1050</td><td class='num'>CHB-5520</td><td class='txt'>ERP confirmations joined to PO lines</td><td class='txt'>Seen 41 times, 2025-09-03 to 2026-03-31. Same PN used by another vendor for a different part.</td></tr><tr><td>Ostmark Werkzeug GmbH</td><td class='num'>K-1050</td><td class='num'>TOOL-PUNCH-STD</td><td class='txt'>ERP confirmations joined to PO lines</td><td class='txt'>Seen 18 times, 2025-09-14 to 2026-02-27. Same PN used by another vendor for a different part.</td></tr><tr><td>Ostmark Werkzeug GmbH</td><td class='num'>WZ-9472-DS</td><td class='num'>TOOL-DIE-9472</td><td class='txt'>ERP confirmations joined to PO lines</td><td class='txt'>Seen 20 times, 2025-09-08 to 2026-03-31</td></tr><tr><td>Ostmark Werkzeug GmbH</td><td class='num'>WZ-HM-EIN</td><td class='num'>TOOL-INS-CAR</td><td class='txt'>ERP confirmations joined to PO lines</td><td class='txt'>Seen 17 times, 2025-09-09 to 2026-03-24</td></tr></tbody></table></div>
+  <p class="note">The confirmation tool writes every new mapping it infers to this table as <i>pending review</i>. After Lisa approves it, it is used automatically. Over time this becomes the vendor-part master, ready to load into the ERP's vendor-part table.</p>
+</section>
+
+<section>
+  <h2>How the numbers were built</h2>
+  <p class="sub">The ERP extract has traps that change the answer if taken at face value:</p>
+  <div class="kpis">
+    <div class="kpi"><span class="n">$28.19M</span><span class="l">received value, corrected</span></div>
+    <div class="kpi"><span class="n">$29.50M</span><span class="l">if reversed keying errors and the unreversed duplicate are counted (+$1.32M)</span></div>
+    <div class="kpi"><span class="n">$25.30M</span><span class="l">if the ERP's own qty_received field is trusted ($-2.89M)</span></div>
+    <div class="kpi"><span class="n">+$76k</span><span class="l">if Ostmark prices were converted from EUR again</span></div>
+  </div>
+  <details><summary>Data problems found and how each was handled</summary><dl><dt>Keyed-in-error receipts reversed (RV + the R it cancels)</dt><dd>50 &middot; Dropped both rows for shipment dates/counts; nets to zero for value.</dd><dt>Unreversed duplicate receipts (same line+qty within 7 days, pushes line over ordered)</dt><dd>1 &middot; Excluded: txn 701546</dd><dt>receipt_txn.txn_date format</dt><dd>MM/DD/YYYY &middot; Parsed explicitly; SQLite date() returns NULL on all rows.</dd><dt>po_line.qty_received disagrees with receipt_txn</dt><dd>169 &middot; Field ignored; receipts are the source of truth.</dd><dt>Superseded confirmations</dt><dd>30 &middot; Only the live (latest) confirmation is used.</dd><dt>Confirmation feed ends (last doc_date)</dt><dd>2026-04-03 &middot; Confirmation metrics use POs dated on/before 2026-03-30 only.</dd><dt>Cancelled POs</dt><dd>5 &middot; Excluded everywhere (none have receipts).</dd><dt>Ostmark EUR confirmations / PO price ratio</dt><dd>0.92 &middot; PO prices are USD already; no FX applied to received value.</dd><dt>qc_hold dates before the PO existed</dt><dd>16 &middot; Hold dates unreliable -&gt; holds shown as counts only, not ranked on.</dd><dt>Unused/decoy tables</dt><dd>gl_account, ship_method, user_master, plant_calendar, mrp_message &middot; No link to vendor performance (MRP messages reflect Beacon demand changes).</dd></dl></details>
+  <details><summary>Metric definitions</summary><dl><dt>Received value</dt><dd>Sum of net receipt qty (R minus reversals; unreversed duplicate excluded) x PO line unit price, bucketed by receipt month. USD. Receipts carry no price, so this is value at PO price, not invoiced cost.</dd><dt>Due lines</dt><dd>Non-cancelled PO lines with required date on/before the as-of date and at least one valid receipt.</dd><dt>On-time %</dt><dd>Due lines whose LAST valid receipt (the one that completes the line) is on/before the required date / due lines.</dd><dt>Severely late</dt><dd>Due lines whose last receipt is more than 7 days after the required date.</dd><dt>$ severely late</dt><dd>Received value (capped at ordered qty) on severely late lines.</dd><dt>Promised late %</dt><dd>Live confirmations whose promised date is after our required date / lines with a live confirmation.</dd><dt>On-time vs promise</dt><dd>Lines received on/before the vendor&#x27;s own promised date / lines with a live confirmation.</dd><dt>Lead time (median days from PO date)</dt><dd>Allowed = required - PO date; Quoted = promised - PO date; Actual = last receipt - PO date.</dd><dt>Past-due open</dt><dd>OPEN lines with required date before as-of and received qty &lt; ordered; value = balance x unit price.</dd><dt>Price above PO</dt><dd>Live USD confirmations priced above the PO line; exposure = price difference x ordered qty.</dd><dt>Trend</dt><dd>On-time % for lines required Sep-Dec 2025 vs Jan-May 2026; Fisher exact test p-value (p&lt;0.05 = real change).</dd></dl></details>
+  <details><summary>What this readout cannot tell you</summary><ul class="note" style="margin-top:10px">
+    <li>Whether any late delivery stopped production or caused a customer expedite: there is no production, downtime or customer-order data in the extract.</li>
+    <li>Invoiced cost or price variance paid: receipts carry no price and there is no invoice/AP table. Value is at PO price.</li>
+    <li>Quality performance: qc_hold has only 35 holds and 16 are dated before their PO existed, so holds are shown as counts, not ranked.</li>
+    <li>Confirmation behaviour after March: the confirmation feed stops at 04/03/2026, so April–May POs have none in the ERP.</li>
+    <li>Why required dates are set where they are: if the 19-day heat-treat lead time is a planning default, part of Continental's "lateness" is Beacon's own.</li>
+  </ul></details>
+</section>
+</div>
+</body></html>

@@ -1,0 +1,7 @@
+vendor_id,vendor_name,country,ap_email,known_pn_mapping_note
+V001,Apex Bar & Tube Co.,USA,orders@apexbar.com,
+V002,Heritage Cold Heading,USA,sales@heritagecoldheading.com,uses own part numbers on confirmations
+V003,Liberty Surface Finishing,USA,service@libertysurface.com,
+V004,Continental Quality Heat Treat,USA,info@continentalqht.com,
+V005,Ostmark Werkzeug GmbH,DEU,vertrieb@ostmark-wzg.de,uses own part numbers on confirmations
+V006,QuickShip Industrial,USA,orders@quickship-ind.com,

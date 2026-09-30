@@ -1,0 +1,45 @@
+po_number,po_date,vendor_id,vendor_name,line_number,our_pn,our_description,qty_ordered,unit_price,required_date
+PO-4500050001,2026-04-29,V001,Apex Bar & Tube Co.,1,BAR-A286-375,"A286 bar stock, 0.375 dia, mill-cert",2500,7.84,2026-06-10
+PO-4500050001,2026-04-29,V001,Apex Bar & Tube Co.,2,BAR-A286-250,"A286 bar stock, 0.250 dia, mill-cert",1500,4.71,2026-06-10
+PO-4500050002,2026-04-23,V001,Apex Bar & Tube Co.,1,BAR-CRES-250,"CRES 17-4 PH bar stock, 0.250 dia",1000,3.92,2026-05-21
+PO-4500050003,2026-05-09,V001,Apex Bar & Tube Co.,1,BAR-CRES-250,"CRES 17-4 PH bar stock, 0.250 dia",1500,3.92,2026-05-30
+PO-4500050004,2026-04-23,V001,Apex Bar & Tube Co.,1,BAR-A286-250,"A286 bar stock, 0.250 dia, mill-cert",200,4.71,2026-05-21
+PO-4500050005,2026-05-12,V001,Apex Bar & Tube Co.,1,BAR-A286-250,"A286 bar stock, 0.250 dia, mill-cert",1500,4.71,2026-06-09
+PO-4500050006,2026-05-03,V001,Apex Bar & Tube Co.,1,BAR-A286-375,"A286 bar stock, 0.375 dia, mill-cert",5000,7.84,2026-06-14
+PO-4500050007,2026-05-04,V001,Apex Bar & Tube Co.,1,BAR-A286-250,"A286 bar stock, 0.250 dia, mill-cert",1500,4.71,2026-06-15
+PO-4500050008,2026-04-23,V001,Apex Bar & Tube Co.,1,BAR-A286-250,"A286 bar stock, 0.250 dia, mill-cert",1000,4.71,2026-05-28
+PO-4500050008,2026-04-23,V001,Apex Bar & Tube Co.,2,BAR-TI64-188,"Ti-6Al-4V bar stock, 0.188 dia",1000,22.5,2026-05-28
+PO-4500050009,2026-04-27,V002,Heritage Cold Heading,1,CHB-9472-3,Cold-headed blank for HX-9472-3,50000,0.84,2026-06-08
+PO-4500050010,2026-05-05,V002,Heritage Cold Heading,1,CHB-7715,Cold-headed blank for CSK-7715,25000,0.62,2026-06-23
+PO-4500050011,2026-05-07,V002,Heritage Cold Heading,1,CHB-9472-3,Cold-headed blank for HX-9472-3,5000,0.84,2026-06-04
+PO-4500050011,2026-05-07,V002,Heritage Cold Heading,2,CHB-3301,Cold-headed blank for NUT-3301-N,25000,0.41,2026-06-04
+PO-4500050011,2026-05-07,V002,Heritage Cold Heading,3,CHB-7715,Cold-headed blank for CSK-7715,25000,0.62,2026-06-04
+PO-4500050012,2026-04-16,V002,Heritage Cold Heading,1,CHB-9472-4,Cold-headed blank for HX-9472-4,15000,0.86,2026-06-04
+PO-4500050013,2026-04-20,V002,Heritage Cold Heading,1,CHB-7715,Cold-headed blank for CSK-7715,25000,0.62,2026-05-18
+PO-4500050013,2026-04-20,V002,Heritage Cold Heading,2,CHB-9472-3,Cold-headed blank for HX-9472-3,5000,0.84,2026-05-18
+PO-4500050014,2026-05-03,V002,Heritage Cold Heading,1,CHB-9472-3,Cold-headed blank for HX-9472-3,25000,0.84,2026-06-07
+PO-4500050014,2026-05-03,V002,Heritage Cold Heading,2,CHB-3301,Cold-headed blank for NUT-3301-N,25000,0.41,2026-06-07
+PO-4500050014,2026-05-03,V002,Heritage Cold Heading,3,CHB-7715,Cold-headed blank for CSK-7715,10000,0.62,2026-06-07
+PO-4500050015,2026-04-29,V002,Heritage Cold Heading,1,CHB-9472-4,Cold-headed blank for HX-9472-4,25000,0.86,2026-06-17
+PO-4500050015,2026-04-29,V002,Heritage Cold Heading,2,CHB-7715,Cold-headed blank for CSK-7715,25000,0.62,2026-06-17
+PO-4500050015,2026-04-29,V002,Heritage Cold Heading,3,CHB-9472-3,Cold-headed blank for HX-9472-3,5000,0.84,2026-06-17
+PO-4500050016,2026-05-03,V003,Liberty Surface Finishing,1,PLAT-PASV,"Passivation per AMS 2700, per piece",2500,0.08,2026-05-17
+PO-4500050017,2026-05-07,V003,Liberty Surface Finishing,1,PLAT-CAD,"Cadmium plating per QQ-P-416, per piece",2500,0.11,2026-05-28
+PO-4500050018,2026-05-09,V003,Liberty Surface Finishing,1,PLAT-CAD,"Cadmium plating per QQ-P-416, per piece",2500,0.11,2026-05-19
+PO-4500050019,2026-05-14,V003,Liberty Surface Finishing,1,PLAT-PASV,"Passivation per AMS 2700, per piece",25000,0.08,2026-05-24
+PO-4500050020,2026-05-07,V003,Liberty Surface Finishing,1,PLAT-CAD,"Cadmium plating per QQ-P-416, per piece",10000,0.11,2026-05-17
+PO-4500050021,2026-05-03,V003,Liberty Surface Finishing,1,PLAT-PASV,"Passivation per AMS 2700, per piece",2500,0.08,2026-05-13
+PO-4500050022,2026-05-07,V004,Continental Quality Heat Treat,1,HT-PRECIP,"Precipitation heat treat A286, per lb",500,2.4,2026-05-21
+PO-4500050023,2026-05-02,V004,Continental Quality Heat Treat,1,HT-PRECIP,"Precipitation heat treat A286, per lb",750,2.4,2026-05-23
+PO-4500050024,2026-04-25,V004,Continental Quality Heat Treat,1,HT-SOLN,"Solution treat + age, per lb",350,3.1,2026-05-09
+PO-4500050025,2026-04-23,V004,Continental Quality Heat Treat,1,HT-SOLN,"Solution treat + age, per lb",350,3.1,2026-05-07
+PO-4500050026,2026-04-23,V005,Ostmark Werkzeug GmbH,1,TOOL-INS-CAR,"Carbide threading insert, A-series",250,18.2,2026-07-02
+PO-4500050027,2026-04-03,V005,Ostmark Werkzeug GmbH,1,TOOL-DIE-9472,"Heading die set, 9472 profile",25,1240.0,2026-05-15
+PO-4500050027,2026-04-03,V005,Ostmark Werkzeug GmbH,2,TOOL-INS-CAR,"Carbide threading insert, A-series",50,18.2,2026-05-15
+PO-4500050028,2026-05-02,V005,Ostmark Werkzeug GmbH,1,TOOL-DIE-9472,"Heading die set, 9472 profile",5,1240.0,2026-06-13
+PO-4500050029,2026-04-13,V005,Ostmark Werkzeug GmbH,1,TOOL-DIE-9472,"Heading die set, 9472 profile",5,1240.0,2026-06-08
+PO-4500050029,2026-04-13,V005,Ostmark Werkzeug GmbH,2,TOOL-INS-CAR,"Carbide threading insert, A-series",250,18.2,2026-06-08
+PO-4500050030,2026-05-14,V006,QuickShip Industrial,1,MISC-SPR-001,"Spring, comp, 0.250 OD",500,0.18,2026-05-21
+PO-4500050031,2026-05-08,V006,QuickShip Industrial,1,MISC-WAS-A25,"Washer, A286, 0.25",500,0.06,2026-05-15
+PO-4500050032,2026-05-08,V006,QuickShip Industrial,1,MISC-WAS-A25,"Washer, A286, 0.25",500,0.06,2026-05-18
+PO-4500050032,2026-05-08,V006,QuickShip Industrial,2,MISC-SPR-001,"Spring, comp, 0.250 OD",1000,0.18,2026-05-18

@@ -1,0 +1,13 @@
+# Core (command-line tool)
+pymupdf>=1.24
+pytesseract>=0.3      # needs the Tesseract program installed for scanned PDFs (see README)
+Pillow>=10
+pandas>=2.0
+numpy>=1.24
+scipy>=1.10           # vendor-history trend test (Task 2 analysis)
+xlsxwriter>=3.1
+openpyxl>=3.1         # reads Lisa's edits back from yesterday's workbook
+# Desk app
+streamlit>=1.40
+# Optional: AI fallback for unknown layouts (off unless BEACON_AI_FALLBACK=1)
+# anthropic>=0.60

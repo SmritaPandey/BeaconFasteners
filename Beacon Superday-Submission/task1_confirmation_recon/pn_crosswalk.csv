@@ -1,0 +1,9 @@
+vendor_id,vendor_name,vendor_pn,beacon_pn,description,mapping_source,mapping_confidence,times_seen,first_seen,last_seen,review_status
+V002,Heritage Cold Heading,APH-125,CHB-3301,"Cold-headed blank, 3301 family",ERP confirmation history (po_number+line_no join),HIGH,36,2025-09-04,2026-03-19,APPROVED (historical)
+V002,Heritage Cold Heading,APH-318,CHB-7715,"Cold-headed blank, 7715 family",ERP confirmation history (po_number+line_no join),HIGH,44,2025-09-17,2026-04-03,APPROVED (historical)
+V002,Heritage Cold Heading,APH-441,CHB-9472-3,"Cold-headed blank, 9472-3 family",ERP confirmation history (po_number+line_no join),HIGH,30,2025-09-10,2026-04-02,APPROVED (historical)
+V002,Heritage Cold Heading,APH-4411,CHB-9472-4,"Cold-headed blank, 9472-4 family",ERP confirmation history (po_number+line_no join),HIGH,35,2025-09-04,2026-03-22,APPROVED (historical)
+V002,Heritage Cold Heading,K-1050,CHB-5520,"Cold-headed blank, 5520 pin family",ERP confirmation history (po_number+line_no join),HIGH,41,2025-09-03,2026-03-31,APPROVED (historical)
+V005,Ostmark Werkzeug GmbH,K-1050,TOOL-PUNCH-STD,"Standard punch, cold header",ERP confirmation history (po_number+line_no join),HIGH,18,2025-09-14,2026-02-27,APPROVED (historical)
+V005,Ostmark Werkzeug GmbH,WZ-9472-DS,TOOL-DIE-9472,"Heading die set, 9472 family",ERP confirmation history (po_number+line_no join),HIGH,20,2025-09-08,2026-03-31,APPROVED (historical)
+V005,Ostmark Werkzeug GmbH,WZ-HM-EIN,TOOL-INS-CAR,Carbide die insert,ERP confirmation history (po_number+line_no join),HIGH,17,2025-09-09,2026-03-24,APPROVED (historical)
