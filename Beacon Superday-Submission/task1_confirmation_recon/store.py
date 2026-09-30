@@ -13,6 +13,9 @@ What it keeps
               append-only. The FIRST promise is never overwritten, so a vendor
               that keeps pushing dates can't end up looking "on time".
   runs        a log of each check (when, how many docs, how many open items)
+  vendor_profiles  what each vendor declared on Beacon's supplier information pack:
+              contacts, acknowledgment turnaround, certifications, and per part their
+              part number and standard lead time (vendor_forms.py)
 
 Why SQLite: a single file, no server, backs up by copying, and the same
 schema moves to SQL Server/Postgres when IT wants it on a shared server.
@@ -43,6 +46,9 @@ CREATE TABLE IF NOT EXISTS crosswalk (
 CREATE TABLE IF NOT EXISTS runs (
   run_at TEXT, as_of TEXT, docs_total INTEGER, docs_new INTEGER, open_items INTEGER, resolved_items INTEGER);
 CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT);
+CREATE TABLE IF NOT EXISTS vendor_profiles (
+  vendor_id TEXT PRIMARY KEY, company TEXT, parts TEXT, problems TEXT, lead_time_gaps TEXT,
+  file_name TEXT, received_at TEXT);
 CREATE TABLE IF NOT EXISTS promise_history (
   po_number TEXT, line_no INTEGER, source_file TEXT, doc_date TEXT, confirmed_qty REAL,
   confirmed_price REAL, currency TEXT, promised_date TEXT, recorded_at TEXT,
@@ -192,6 +198,34 @@ class Store:
                 w.writeheader()
                 w.writerows(rows)
         return path
+
+    # ---------------- vendor profiles (supplier information pack) ----------------
+    @_locked
+    def save_vendor_profile(self, res, file_name):
+        """Keep the vendor's declarations; their part numbers go to the review queue, never
+        straight to APPROVED (a vendor can be wrong about which of our parts is which)."""
+        self.con.execute("insert or replace into vendor_profiles values (?,?,?,?,?,?,?)", (
+            res["vendor_id"], json.dumps(res["company"], default=str), json.dumps(res["parts"], default=str),
+            json.dumps(res["problems"]), json.dumps(res["lead_time_gaps"]), file_name, now()))
+        day = now()[:10]
+        for m in res["mappings"]:
+            if not self.con.execute("select 1 from crosswalk where vendor_id=? and vendor_pn=?",
+                                    (m["vendor_id"], m["vendor_pn"])).fetchone():
+                self.con.execute("insert into crosswalk values (?,?,?,?,?,?,?,?,?,?,?,?)", (
+                    m["vendor_id"], m["vendor_pn"], m["beacon_pn"], m.get("note", ""),
+                    "Vendor-declared (supplier information pack %s)" % file_name, "HIGH", 1, day, day,
+                    "PENDING REVIEW", None, None))
+        self.con.commit()
+
+    @_locked
+    def vendor_profiles(self):
+        out = {}
+        for r in self.con.execute("select * from vendor_profiles"):
+            d = dict(r)
+            for k in ("company", "parts", "problems", "lead_time_gaps"):
+                d[k] = json.loads(d[k] or "null")
+            out[d["vendor_id"]] = d
+        return out
 
     # ---------------- items (the to-do list that survives across days) ----------------
     @_locked

@@ -251,6 +251,18 @@ TEMPLATES = [
 
 
 def parse_file(path):
+    if path.lower().endswith(".xlsx"):
+        import vendor_forms
+        try:
+            d = vendor_forms.read_ack_form(path)
+        except Exception as e:
+            d, err = None, e
+        else:
+            err = None
+        if d is None:
+            d = _doc(template="unknown", doc_type="UNREADABLE", text_source="form", raw_text="",
+                     warnings=["Excel file is not a Beacon acknowledgment form%s - read by hand." % (" (%s)" % err if err else "")])
+        return d
     text, source = extract_text(path)
     for sig, fn in TEMPLATES:
         if sig.search(text):

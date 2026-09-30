@@ -22,7 +22,7 @@ def _dt(d):
     return datetime.combine(d, datetime.min.time())
 
 
-def write_workbook(path, results, exceptions, review, suggestions, docs, vendors, xw, as_of, item_status=None):
+def write_workbook(path, results, exceptions, review, suggestions, docs, vendors, xw, as_of, item_status=None, backlog=None):
     """item_status: {item_key: (status, note, first_seen)} from the Desk memory, so Lisa's
     Done/Notes carry forward and items she already handled sink to the bottom."""
     item_status = item_status or {}
@@ -286,7 +286,34 @@ def write_workbook(path, results, exceptions, review, suggestions, docs, vendors
     ws.data_validation(3, 9, max(i - 1, 3), 9, {"validate": "list", "source": [
         "PENDING REVIEW", "APPROVED", "REJECTED", "APPROVED (historical)"]})
 
-    # ---- 8. Run Summary --------------------------------------------------
+    # ---- 8. Old Open Balances (from ERP history) ---------------------------
+    if backlog:
+        ws = wb.add_worksheet("Old Open Balances")
+        ws.write(0, 0, "From the ERP: PO lines past their required date with quantity still open (%d lines, $%s). Months-old "
+                       "short-shipped balances are usually vendor short-ships nobody closed - chase the balance or short-close the "
+                       "line so MRP stops counting on it." % (len(backlog), format(round(sum(b["balance_value"] for b in backlog)), ",")), W)
+        ws.set_row(0, 45)
+        cols = ["Vendor", "PO", "Line", "Part", "Ordered", "Received", "Open balance", "Balance $", "Required",
+                "Days past due", "What it is", "Last receipt", "Suggested action"]
+        header(ws, 2, cols, [28, 16, 6, 16, 10, 10, 12, 12, 11, 10, 30, 11, 50])
+        for i, b in enumerate(backlog, 3):
+            act = ("Chase: nothing received yet." if b["kind"].startswith("Nothing") else
+                   "Ask vendor if the balance will ship; if not, short-close the line." if b["days_past_due"] <= 60 else
+                   "Probably never shipping: confirm with vendor and short-close.")
+            vals = [vname(b["vendor_id"]), b["po_number"], b["line_no"], b["part_id"], b["ordered"], b["received"],
+                    b["balance"], b["balance_value"]]
+            for c, v in enumerate(vals):
+                ws.write(i, c, v, M if c == 7 else (N if c in (4, 5, 6) else None))
+            ws.write_datetime(i, 8, _dt(b["required"]), D)
+            ws.write_number(i, 9, b["days_past_due"], N)
+            ws.write(i, 10, b["kind"])
+            if b["last_receipt"]:
+                ws.write_datetime(i, 11, _dt(b["last_receipt"]), D)
+            ws.write(i, 12, act, W)
+        ws.autofilter(2, 0, 2 + len(backlog), len(cols) - 1)
+        ws.freeze_panes(3, 2)
+
+    # ---- 9. Run Summary --------------------------------------------------
     stats = run_stats(results, exceptions, review, docs, suggestions)
     ws = wb.add_worksheet("Run Summary")
     ws.set_column(0, 0, 55)
@@ -317,6 +344,12 @@ def draft_emails(results, exceptions, vendors, buyer="Lisa", skip_keys=()):
             if "DROPPED" in r["issues"]:
                 b.append("line %d (%s, qty %d) is not on your acknowledgment - please confirm you will ship it" % (
                     r["line_number"], r["our_pn"], r["qty"]))
+            if "DECLINED" in r["issues"]:
+                b.append("you indicated you cannot supply line %d (%s, qty %d) - is there any alternative (partial qty, "
+                         "later date, substitute material)?" % (r["line_number"], r["our_pn"], r["qty"]))
+            if "FORM_INCOMPLETE" in r["issues"]:
+                b.append("line %d on the acknowledgment form is incomplete (%s) - please complete it and send the form back" % (
+                    r["line_number"], "; ".join(n.replace("Form problem: ", "") for n in r["notes"] if n.startswith("Form problem"))))
             if "NO_CONF" in r["issues"]:
                 b.append("we have not received an acknowledgment - please confirm qty, price and ship date")
             if "NO_DETAIL" in r["issues"]:
@@ -359,12 +392,13 @@ def run_stats(results, exceptions, review, docs, suggestions):
     for r in results.values():
         by_sev[r["sev"]] += 1
     unaccounted = [k for k, r in results.items()
-                   if r["conf_qty"] is None and not set(r["issues"]) & {"DROPPED", "NO_CONF", "NO_DETAIL"}]
+                   if r["conf_qty"] is None and not set(r["issues"]) & {"DROPPED", "NO_CONF", "NO_DETAIL", "DECLINED", "FORM_INCOMPLETE"}]
     no_status = [d["file"] for d in docs if not d.get("status")]
     return {
         "PDFs processed": len(docs),
         "  read from text layer": sum(1 for d in docs if d.get("text_source") == "text"),
         "  read by OCR (scans)": sum(1 for d in docs if d.get("text_source") == "ocr"),
+        "  Beacon forms (no reading needed)": sum(1 for d in docs if d.get("text_source") == "form"),
         "  unreadable (manual)": sum(1 for d in docs if d["doc_type"] == "UNREADABLE"),
         "  duplicates ignored": len(docs) - len(used),
         "  superseded by a later revision": sum(1 for d in docs if str(d.get("status", "")).startswith("Superseded")),
@@ -374,6 +408,8 @@ def run_stats(results, exceptions, review, docs, suggestions):
         "  possible dropped lines": sum(1 for r in results.values() if "DROPPED" in r["issues"]),
         "  no confirmation at all": sum(1 for r in results.values() if "NO_CONF" in r["issues"]),
         "  acknowledged without qty/date": sum(1 for r in results.values() if "NO_DETAIL" in r["issues"]),
+        "  declined by vendor (Beacon form)": sum(1 for r in results.values() if "DECLINED" in r["issues"]),
+        "  incomplete on Beacon form": sum(1 for r in results.values() if "FORM_INCOMPLETE" in r["issues"]),
         "Priority 1 (act today) lines": by_sev[1],
         "Priority 2 (this week) lines": by_sev[2],
         "Priority 3 (check) lines": by_sev[3],

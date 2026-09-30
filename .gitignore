@@ -2,3 +2,5 @@
 __pycache__/
 .DS_Store
 desk_data/
+node_modules/
+*.pyc

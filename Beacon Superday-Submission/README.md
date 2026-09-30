@@ -6,6 +6,7 @@ Tinicum FDE super-day case study. Two deliverables share one engine:
 |---|---|---|---|
 | **Task 1** | Lisa, senior buyer | **Confirmation Desk.** Reads vendor acknowledgment PDFs, checks them against the open PO list and produces a to-do list that remembers yesterday. Use it as an Excel workbook, or as a simple browser app. | `output/PO_Confirmation_Check_2026-05-17.xlsx` |
 | **Task 2** | Plant manager | **Vendor performance readout** built from the ERP extract: received value by month, a vendor-by-vendor comparison, and which vendor to call first and why. | `output/vendor_readout.html` (or `output/Vendor_Readout.xlsx`) |
+| **Vendor forms** | Vendors, via Lisa | **Fix it at the source.** Beacon's own Excel acknowledgment form per PO, and a supplier information pack per vendor, both pre-filled from the ERP. Returned forms load straight into the daily check. | `output/vendor_forms/` |
 | Deck | Tinicum panel | The 30-minute walkthrough | `presentation/Beacon_FDE_Casestudy.pptx` |
 
 ---
@@ -26,7 +27,7 @@ python3 recon.py --confirmations /data/confirmations --pos /data/open_pos.csv \
 cd ../task2_vendor_readout
 python3 build_readout.py --erp /data/beacon_erp.db --out ../output
 
-# Tests (44 checks; the end-to-end ones use /data if present, or set BEACON_DATA=...)
+# Tests (58 checks; the end-to-end ones use /data if present, or set BEACON_DATA=...)
 cd ../task1_confirmation_recon && python3 -m unittest discover -s tests -v
 ```
 
@@ -42,6 +43,7 @@ cd ../task1_confirmation_recon && python3 -m unittest discover -s tests -v
 4. **Chase & due soon:** the next 14 days, ranked by risk, plus POs waiting for an acknowledgment.
 5. **Draft emails:** one ready-to-edit email per vendor to copy into Outlook. The tool never sends anything.
 6. **Download Excel** at any time.
+7. **Vendor forms:** download the acknowledgment form to attach to a PO, or a vendor's supplier pack; upload a returned pack to check it (section 4).
 
 **Option B: Excel only.** Run `Run daily check (Excel only).command`, or the `recon.py` command above, each morning. Type `Yes` in **Done?** and add **Notes** in the workbook, and type `APPROVED` next to a part number on the **PN Crosswalk** tab. The next run reads those edits back, so handled items stay handled.
 
@@ -84,7 +86,46 @@ report.py (Excel)    desk_app.py (Streamlit)    ◄── same engine, two front
 
 **Adding a vendor layout** means writing one ~20-line parse function in `parsers.py` and adding it to `TEMPLATES`. Until then, that vendor's PDFs are flagged "could not read" (or typed in via the form), never silently skipped.
 
-## 4. What the tool found this week (35 PDFs, 44 open PO lines)
+## 4. Past and future: using the ERP, and fixing discrepancies at the source
+
+Reading six PDF layouts better every year is the wrong long-term goal. The durable fix is for vendors to answer in Beacon's own format, with the answers checked as they type. `vendor_forms.py` does this with plain Excel files, because vendors already work by email and it needs no portal, hosting or logins.
+
+**The past (the ERP extract)** feeds everything below:
+
+| From 8 months of ERP history | Used for |
+|---|---|
+| Per vendor + part: POs, last price, planned / quoted / actual lead time (medians) | Pre-filling the supplier pack, and the lead-time gap report for planning |
+| Approved vendor part numbers (mined from confirmations) | Pre-filling "Your part no." so vendors confirm rather than type |
+| 40 PO lines past due with quantity still open ($128k, incl. Apex $77k) | New **Old Open Balances** sheet in Lisa's workbook and on *Chase & due soon*: chase or short-close |
+| Vendor on-time and promise-keeping history | Warnings next to today's promises (already in the desk) |
+
+**The future: two forms.**
+
+1. **PO acknowledgment form** (`output/vendor_forms/acknowledgment_forms/`, one per open PO; send it with the PO)
+   - Grey cells are our PO and are locked. Rows can't be deleted, so a line can't vanish silently.
+   - For every line the vendor chooses *Accept as ordered*, *Accept with changes* or *Cannot supply*, and gives **one real delivery date**. Excel refuses "KW 20-22" and "TBD".
+   - A qty or price change needs a reason code (material surcharge, capacity, partial now, …).
+   - Returned: drop it in the sidebar with the PDFs. It matches on Beacon part numbers at HIGH confidence, with no OCR.
+   - *Cannot supply* becomes **VENDOR_DECLINED_LINE** (act today, with the vendor's reason) instead of "possible dropped line". A blank or invalid answer becomes **FORM_INCOMPLETE**, and the draft email asks for exactly that line back.
+2. **Supplier information pack** (`output/vendor_forms/supplier_packs/`, once per vendor; refresh yearly)
+   - Pre-filled with every part we have bought from that vendor, and our record of planned / quoted / actual lead time.
+   - The vendor confirms its own part numbers, standard lead times, MOQ, price basis, surcharges, acknowledgment contact and turnaround, and certifications (AS9100 / Nadcap) with expiry dates.
+   - Returned (*Vendor forms* page): the file is validated, and a reply email lists what is missing.
+     - Declared part numbers go to *Needs your OK*, never straight to APPROVED. A part number given for two different parts is refused, and a renumbering is flagged against ERP history.
+     - A **lead-time gap** report tells planning where MRP is wrong. Continental's standard is 28 days; we plan 19.
+
+```bash
+cd task1_confirmation_recon
+python3 vendor_forms.py ack     --pos /data/open_pos.csv --vendors /data/vendor_master.csv --erp /data/beacon_erp.db --out ../output/vendor_forms/acknowledgment_forms
+python3 vendor_forms.py onboard --pos /data/open_pos.csv --vendors /data/vendor_master.csv --erp /data/beacon_erp.db --out ../output/vendor_forms/supplier_packs
+python3 vendor_forms.py check   ../output/vendor_forms/SYNTHETIC_vendor_replies/SYNTHETIC_Continental_supplier_pack.xlsx
+```
+
+`output/vendor_forms/SYNTHETIC_vendor_replies/` holds two **made-up** vendor replies for demos: Ostmark declining a line, and Continental returning its pack. They are not case data. Dropping the Ostmark one into the desk shows a *Vendor declined line* item.
+
+**Rollout, and why not a portal yet:** start with the vendors that cause the most reading work (Continental's scans, Ostmark's German week ranges, Heritage's part numbers). PDFs keep working for everyone else, so it is not a big-bang change. Once most vendors use the form, the same fields become a small web form or an EDI 855 feed with no change to the engine.
+
+## 5. What the tool found this week (35 PDFs, 44 open PO lines)
 
 | | |
 |---|---|
@@ -93,7 +134,7 @@ report.py (Excel)    desk_app.py (Streamlit)    ◄── same engine, two front
 | Check | Revised QuickShip email (the original is superseded) · QuickShip sent an **invoice** in place of an acknowledgment · Continental promise dates earlier than the confirmation itself · documents dated before their PO · 2 renumbered vendor part numbers |
 | Clean | 22 lines |
 
-## 5. Vendor readout: headline
+## 6. Vendor readout: headline
 
 **Call Continental Quality Heat Treat first.**
 - It is on time on 42% of lines; the other vendors range from 69% to 99%.
@@ -106,13 +147,13 @@ Apex is second, for commercial reasons rather than delivery: 85% of spend, CRES 
 
 The ERP extract has traps that change the answer. Each was independently re-derived before use. They are listed in the readout and in the workbook's *Data Quality* tab.
 
-## 6. Layout
+## 7. Layout
 
 ```
-task1_confirmation_recon/   parsers, recon, workflow, store, report, desk_app, ai_reader, tests/, launchers
+task1_confirmation_recon/   parsers, recon, workflow, store, report, desk_app, ai_reader, vendor_forms, tests/, launchers
 task2_vendor_readout/       analysis.py (metrics + data-trap handling), build_readout.py (workbook + HTML)
-output/                     generated from the case data
+output/                     generated from the case data (+ output/vendor_forms/: forms to send vendors)
 presentation/               deck + speaker notes
 ```
 
-Case data (PDFs, CSVs, ERP extract) is **not** included in the repository, only in the submission zip's generated outputs.
+The case inputs (PDFs, CSVs, ERP extract) are in `../Beacon Superday-Candidate/data/` in this repository. The tests find them there, or set `BEACON_DATA`.

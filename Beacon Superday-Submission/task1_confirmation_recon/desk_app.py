@@ -113,6 +113,8 @@ def add_files(store, files):
 
 
 def pdf_images(path, dpi=110):
+    if not path.lower().endswith(".pdf"):
+        return []      # Beacon acknowledgment forms are Excel: nothing to picture
     import fitz
     doc = fitz.open(path)
     return [p.get_pixmap(dpi=dpi).tobytes("png") for p in doc]
@@ -273,8 +275,9 @@ def manual_entry(store, d, last):
     st.markdown("**%s** - %s" % (d["file"], "; ".join(d["warnings"])))
     p = doc_path(store, d["file"])
     a, b = st.columns([1, 1])
-    if p:
-        a.image(pdf_images(p, dpi=90)[0], width="stretch")
+    imgs = pdf_images(p, dpi=90) if p else []
+    if imgs:
+        a.image(imgs[0], width="stretch")
     vid = b.selectbox("Vendor", list(vendors), format_func=lambda v: vendors[v]["vendor_name"], key="mv_" + d["hash"],
                       index=list(vendors).index(d["vendor_id"]) if d.get("vendor_id") in vendors else 0)
     pos = sorted({l["po_number"] for l in last["po_lines"] if l["vendor_id"] == vid})
@@ -342,6 +345,17 @@ def page_ahead(store, last):
     else:
         st.write("Every open PO has an acknowledgment on file.")
 
+    backlog = last.get("backlog") or []
+    if backlog:
+        st.markdown("**Old open balances in the ERP** - %d lines, $%s still open past the required date" % (
+            len(backlog), format(round(sum(b["balance_value"] for b in backlog)), ",")))
+        st.dataframe(pd.DataFrame([{"Vendor": vendors.get(b["vendor_id"], {}).get("vendor_name", b["vendor_id"]),
+                                    "PO": b["po_number"], "Line": b["line_no"], "Part": b["part_id"], "Open qty": b["balance"],
+                                    "Open $": round(b["balance_value"]), "Days past due": b["days_past_due"], "What": b["kind"]}
+                                   for b in backlog]), hide_index=True, width="stretch")
+        st.caption("From ERP history (receipts vs PO lines). Months-old short-shipped balances are usually short-ships nobody "
+                   "closed: ask the vendor, or short-close the line so MRP stops counting on it.")
+
 
 def page_all(store, last):
     st.subheader("All open PO lines")
@@ -381,6 +395,101 @@ def page_history(store, last):
                  hide_index=True, width="stretch",
                  column_config={k: st.column_config.ProgressColumn(k, format="percent", min_value=0, max_value=1)
                                 for k in ("On time vs our need", "Kept its own promise", "Promises later than we need")})
+
+
+def page_forms(store, last):
+    """Stop discrepancies at the source: Beacon's own acknowledgment form and supplier information pack."""
+    import io
+    import zipfile
+    import vendor_forms as vf
+    st.subheader("Vendor forms")
+    st.caption("Instead of reading 6 different PDF layouts, send vendors Beacon's own Excel forms. Our PO columns are locked, "
+               "every line needs an answer, and dates must be real dates. Returned forms go in the sidebar like any PDF "
+               "and match automatically.")
+    vendors, xw = last["vendors"], store.crosswalk()
+    profile = vf.part_profile(P_ERP)
+    groups = vf.po_groups(last["po_lines"])
+
+    def ack_bytes(po):
+        path = os.path.join(EXPORTS, "Beacon_Acknowledgment_%s.xlsx" % po)
+        vf.write_ack_form(path, groups[po], vendors.get(groups[po][0]["vendor_id"], {}), xw, profile)
+        return open(path, "rb").read()
+
+    st.markdown("#### 1. Send an acknowledgment form with each PO")
+    waiting = sorted({r["po_number"] for r in last["results"].values() if "NO_CONF" in r["issues"]})
+    a, b = st.columns([2, 1])
+    po = a.selectbox("PO", sorted(groups), format_func=lambda p: "%s - %s%s" % (
+        p, vendors.get(groups[p][0]["vendor_id"], {}).get("vendor_name", ""), "  (no acknowledgment yet)" if p in waiting else ""))
+    b.download_button("⬇️ Acknowledgment form", ack_bytes(po), "Beacon_Acknowledgment_%s.xlsx" % po, width="stretch")
+    if waiting:
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w") as z:
+            for p in waiting:
+                z.writestr("Beacon_Acknowledgment_%s.xlsx" % p, ack_bytes(p))
+        st.download_button("⬇️ Forms for all %d POs still waiting for an acknowledgment (zip)" % len(waiting), buf.getvalue(),
+                           "Beacon_Acknowledgment_forms.zip")
+    with st.expander("What the vendor sees, and what happens when it comes back"):
+        st.markdown("- Grey = our PO (locked; rows can't be deleted). Yellow = vendor fills: **Response** for every line "
+                    "(Accept as ordered / Accept with changes / Cannot supply), qty, price, currency, **one delivery date**, "
+                    "and a reason code for any change.\n"
+                    "- Drop the returned file in the sidebar. It matches on our part numbers (no OCR, no guessing).\n"
+                    "- *Cannot supply* shows as **Vendor declined line** (act today), not as a possible dropped line. "
+                    "A blank answer or a date like 'KW 20-22' shows as **Form incomplete**, and the draft email asks for it back.")
+
+    st.markdown("#### 2. Supplier information pack (once per vendor, refresh yearly)")
+    st.caption("Pre-filled from 8 months of ERP history: every part we buy from them, with our planned, their quoted and the "
+               "actual lead time. The vendor confirms their part numbers, standard lead times, contacts and certifications.")
+    a, b = st.columns([2, 1])
+    vid = a.selectbox("Vendor", sorted(vendors), format_func=lambda v: vendors[v]["vendor_name"], key="pack_vendor")
+    path = os.path.join(EXPORTS, "Beacon_Supplier_Pack_%s.xlsx" % vid)
+    vf.write_onboarding_pack(path, vid, vendors, profile, last["po_lines"], xw, vf.descriptions_from_erp(P_ERP))
+    b.download_button("⬇️ Supplier pack", open(path, "rb").read(), os.path.basename(path), width="stretch")
+
+    up = st.file_uploader("Returned supplier pack (xlsx)", type=["xlsx"], key="pack_up")
+    if up:
+        tmp = os.path.join(EXPORTS, "returned_" + up.name)
+        with open(tmp, "wb") as fh:
+            fh.write(up.getvalue())
+        res = vf.read_onboarding_pack(tmp)
+        if res is None:
+            st.error("That file is not a Beacon supplier pack.")
+        else:
+            name = vendors.get(res["vendor_id"], {}).get("vendor_name", res["vendor_id"])
+            if res["problems"]:
+                st.warning("%d item(s) to send back to %s" % (len(res["problems"]), name))
+                st.code(vf.onboarding_reply_email(res, name, store.settings().get("buyer_name", "Lisa")), language=None)
+            else:
+                st.success("Complete - nothing to send back.")
+            if res["mappings"]:
+                st.markdown("**Part numbers they declared** (go to *Needs your OK* when saved)")
+                st.dataframe(pd.DataFrame(res["mappings"]), hide_index=True, width="stretch")
+            if res["lead_time_gaps"]:
+                st.markdown("**Lead-time gaps for planning:** their standard lead time is well above what we plan")
+                st.dataframe(pd.DataFrame(res["lead_time_gaps"]).rename(columns={
+                    "beacon_pn": "Part", "planned": "We plan (days)", "vendor_standard": "Their standard", "quoted": "They quoted (ERP)",
+                    "actual": "Actual (ERP)", "gap": "Gap"}), hide_index=True, width="stretch")
+            if st.button("Save to %s's vendor file" % name, type="primary"):
+                store.save_vendor_profile(res, up.name)
+                st.success("Saved. New part numbers are waiting on 'Needs your OK'.")
+
+    profiles = store.vendor_profiles()
+    if profiles:
+        st.markdown("#### Vendor files on record")
+        soon = last["as_of"] + timedelta(days=60)
+        rows = []
+        for v, p in profiles.items():
+            c = p["company"]
+            certs = []
+            for n in ("1", "2"):
+                if c.get("cert" + n) not in (None, "", "None"):
+                    exp = c.get("cert%s_exp" % n)
+                    flag = " ⚠️ expires soon" if exp and str(exp) <= soon.isoformat() else ""
+                    certs.append("%s (exp %s)%s" % (c["cert" + n], exp or "?", flag))
+            rows.append({"Vendor": vendors.get(v, {}).get("vendor_name", v), "Acknowledgments to": c.get("ack_email"),
+                         "Acknowledges within (days)": c.get("ack_days"), "Certifications": "; ".join(certs),
+                         "Parts": len(p["parts"]), "Lead-time gaps": len(p["lead_time_gaps"] or []),
+                         "Open problems": len(p["problems"] or []), "Received": p["received_at"][:10]})
+        st.dataframe(pd.DataFrame(rows), hide_index=True, width="stretch")
 
 
 def page_settings(store, last):
@@ -440,7 +549,7 @@ def excel_bytes(store, last):
     status = workflow.item_status(store)
     path = os.path.join(EXPORTS, "PO_Confirmation_Check_%s.xlsx" % last["as_of"].isoformat())
     report.write_workbook(path, last["results"], last["exceptions"], last["review"], last["suggestions"], last["docs"],
-                          last["vendors"], store.crosswalk(), last["as_of"], item_status=status)
+                          last["vendors"], store.crosswalk(), last["as_of"], item_status=status, backlog=last.get("backlog"))
     return open(path, "rb").read(), os.path.basename(path)
 
 
@@ -453,7 +562,7 @@ def main():
         st.caption("Beacon Fasteners - Purchasing")
         if not inputs_ok():
             st.error("Load today's open PO list and the vendor list in Settings first.")
-        files = st.file_uploader("Drop vendor confirmations (PDF)", type=["pdf"], accept_multiple_files=True, key="up_%d" % st.session_state.get("up_n", 0))
+        files = st.file_uploader("Drop vendor confirmations (PDF, or returned Beacon forms)", type=["pdf", "xlsx"], accept_multiple_files=True, key="up_%d" % st.session_state.get("up_n", 0))
         if files and st.button("Check them", type="primary", width="stretch"):
             with st.spinner("Reading %d document(s)..." % len(files)):
                 added, dup = add_files(store, files)
@@ -471,7 +580,7 @@ def main():
                     add_files(store, [F(p) for p in sorted(glob.glob(os.path.join(SAMPLE, "confirmations", "*.pdf")))])
                     run_check(store)
                 st.rerun()
-        page = st.radio("Go to", ["Today's list", "Needs your OK", "Chase & due soon", "All open POs", "Vendor history", "Settings"],
+        page = st.radio("Go to", ["Today's list", "Needs your OK", "Chase & due soon", "All open POs", "Vendor history", "Vendor forms", "Settings"],
                         label_visibility="collapsed")
 
     if not inputs_ok():
@@ -493,7 +602,7 @@ def main():
     if not last["docs"]:
         st.info("Drop the day's vendor confirmations in the sidebar to start.")
     {"Today's list": page_today, "Needs your OK": page_review, "Chase & due soon": page_ahead, "All open POs": page_all,
-     "Vendor history": page_history, "Settings": page_settings}[page](store, last)
+     "Vendor history": page_history, "Vendor forms": page_forms, "Settings": page_settings}[page](store, last)
 
 
 main()
