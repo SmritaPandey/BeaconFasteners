@@ -25,11 +25,9 @@ def vendor_history(erp_path):
     """Past performance per vendor from ERP history (Task 2 analysis); {} if unavailable."""
     if not erp_path or not os.path.exists(erp_path):
         return {}
-    import sys
-    sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "task2_vendor_readout"))
+    import vendor_forms
     try:
-        from analysis import build
-        s = build(erp_path)["score"]
+        s = vendor_forms.erp_build(erp_path)["score"]
     except Exception:
         return {}
     return {vid: dict(on_time=float(r.on_time), meets_promise=float(r.on_time_vs_promise),
@@ -126,8 +124,14 @@ def check(store, paths, reader=None, hist=None, as_of=None):
         current = {}
     new, resolved = store.sync_items(current, as_of.isoformat())
     store.log_run(as_of.isoformat(), len(docs), new, len(store.items(OPEN)), resolved)
+    import vendor_forms
+    try:
+        backlog = vendor_forms.old_open_balances(paths.erp)
+    except Exception:
+        backlog = []
     return dict(results=results, exceptions=exceptions, review=review, docs=docs, as_of=as_of, vendors=vendors,
-                po_lines=po_lines, hist=hist, new=new, resolved=resolved, extracted=extracted, suggestions=suggestions)
+                po_lines=po_lines, hist=hist, new=new, resolved=resolved, extracted=extracted, suggestions=suggestions,
+                backlog=backlog)
 
 
 def item_status(store):

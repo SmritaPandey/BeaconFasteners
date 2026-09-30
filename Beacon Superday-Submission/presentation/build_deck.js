@@ -65,7 +65,8 @@ function table(s, header, rows, opts) {
   s.addText("Beacon Fasteners", { x: M, y: 1.9, w: 12, h: 1.0, fontFace: HEAD, fontSize: 48, bold: true, color: C.white, margin: 0, isTextBox: true });
   s.addText("A confirmation desk for Lisa, and a vendor readout for the plant manager", { x: M, y: 2.95, w: 11, h: 0.6, fontFace: HEAD, fontSize: 24, color: "CFD8DF", margin: 0, isTextBox: true });
   const items = [["Task 1", "Confirmation Desk: vendor PDFs checked against open POs, worst-first to-do list in Excel"],
-    ["Task 2", "Vendor readout: 8 months of ERP history, received value, vendor comparison, who to call first"]];
+    ["Task 2", "Vendor readout: 8 months of ERP history, received value, vendor comparison, who to call first"],
+    ["Next", "Vendor forms: Beacon's own acknowledgment form and supplier pack, pre-filled from the ERP"]];
   items.forEach(([k, v], i) => {
     s.addText(k, { x: M, y: 4.3 + i * 0.55, w: 1.2, h: 0.4, fontFace: BODY, fontSize: 15, bold: true, color: C.accent, margin: 0, isTextBox: true });
     s.addText(v, { x: M + 1.2, y: 4.3 + i * 0.55, w: 10.5, h: 0.4, fontFace: BODY, fontSize: 15, color: C.white, margin: 0, isTextBox: true });
@@ -91,6 +92,7 @@ function table(s, header, rows, opts) {
     ["Silently dropped line: ", "Apex left PO-4500050001 line 2 (1,500 pcs) off its acknowledgment."],
     ["Stray PO: ", "a confirmation arrived for PO-4500060619, which is not an open Beacon PO."],
     ["Remembers: ", "handled items stay handled, the first promise date is never overwritten."],
+    ["Fixes it at the source: ", "Beacon's own acknowledgment form and supplier pack, pre-filled from the ERP."],
   ], { x: x1, y: 4.25, w: colW - 0.6, h: 2.4, fontSize: 13 });
   stat(s, x2, 2.8, sw, "$28.2M", "received Sep 2025 to May 2026 (after cleaning)", C.ink, 26);
   stat(s, x2 + sw, 2.8, sw, "42%", "Continental on time; other vendors 69-99%", C.red, 26);
@@ -228,8 +230,44 @@ function table(s, header, rows, opts) {
   s.addText("Why keep the first promise", { x: rx + 0.3, y: 1.9, w: rw - 0.6, h: 0.4, fontFace: HEAD, fontSize: 17, bold: true, color: C.ink, margin: 0, isTextBox: true });
   s.addText("If every revised date overwrites the last one, every PO ends up looking on time and vendor performance can't be measured. The same trap is in the ERP: 30 confirmations were superseded.", { x: rx + 0.3, y: 2.75, w: rw - 0.6, h: 1.4, fontFace: BODY, fontSize: 13, color: C.slate, margin: 0, valign: "top", isTextBox: true });
   s.addText("Tested", { x: rx + 0.3, y: 4.2, w: rw - 0.6, h: 0.35, fontFace: HEAD, fontSize: 17, bold: true, color: C.ink, margin: 0, isTextBox: true });
-  s.addText("44 automated tests. TestDayTwo runs day 1 on the real PDFs, applies Lisa's Excel edits, then feeds a revised vendor PDF on day 2 and checks each row above.", { x: rx + 0.3, y: 4.6, w: rw - 0.6, h: 1.9, fontFace: BODY, fontSize: 13, color: C.slate, margin: 0, valign: "top", isTextBox: true });
+  s.addText("58 automated tests. TestDayTwo runs day 1 on the real PDFs, applies Lisa's Excel edits, then feeds a revised vendor PDF on day 2 and checks each row above.", { x: rx + 0.3, y: 4.6, w: rw - 0.6, h: 1.9, fontFace: BODY, fontSize: 13, color: C.slate, margin: 0, valign: "top", isTextBox: true });
   s.addNotes("This is the answer to 'is it a one-time script?'. The store is one SQLite file: items, notes, append-only promise history, crosswalk approvals and file hashes. The Excel and the app read and write the same store.");
+}
+
+
+// ------------------------------------------------------------------ 8b fix at source
+{
+  const s = base("Task 1 · Past feeds future", "Fix it at the source: Beacon's own forms, pre-filled from the ERP");
+  const lw = 5.6;
+  const cards = [
+    ["PO acknowledgment form", "One Excel file per PO, sent with it", [
+      "Our lines locked; rows can't be deleted, so nothing drops silently",
+      "Every line: Accept / Accept with changes / Cannot supply",
+      "One real delivery date; Excel refuses \"KW 20-22\"",
+      "Reason code for any qty or price change",
+      "Returned file drops into the same check: HIGH match, no OCR"]],
+    ["Supplier information pack", "Once per vendor, pre-filled from 8 months of ERP", [
+      "Every part we buy from them, with planned / quoted / actual lead time",
+      "They confirm their part numbers → Lisa's approval queue",
+      "Standard lead times → gap report for planning",
+      "Contacts, turnaround, AS9100 / Nadcap expiry"]],
+  ];
+  cards.forEach(([t, sub, items], i) => {
+    const y = 1.6 + i * 2.8, h = i === 0 ? 2.65 : 2.3;
+    card(s, M, y, lw, h);
+    s.addText(t, { x: M + 0.25, y: y + 0.12, w: lw - 0.5, h: 0.38, fontFace: HEAD, fontSize: 16, bold: true, color: C.ink, margin: 0, isTextBox: true });
+    s.addText(sub, { x: M + 0.25, y: y + 0.48, w: lw - 0.5, h: 0.3, fontFace: BODY, fontSize: 12, italic: true, color: C.accent, margin: 0, isTextBox: true });
+    bullets(s, items, { x: M + 0.25, y: y + 0.82, w: lw - 0.5, h: h - 0.9, fontSize: 12, paraSpaceAfter: 2 });
+  });
+  const rx = M + lw + 0.35, rw = W - M - rx;
+  const h1 = rw * 400 / 1380, h2 = rw * 430 / 1380;
+  s.addText("Ostmark answers on the form: line 2 is now \"Vendor declined\" (act today, with the reason), not a guess", { x: rx, y: 1.6, w: rw, h: 0.5, fontFace: BODY, fontSize: 12, bold: true, color: C.ink, margin: 0, valign: "top", isTextBox: true });
+  s.addImage({ path: A("today_after_form_c.png"), x: rx, y: 2.1, w: rw, h: h1, shadow: { type: "outer", blur: 6, offset: 2, angle: 90, color: "000000", opacity: 0.25 } });
+  const y2 = 2.1 + h1 + 0.3;
+  s.addText("Continental returns its pack: MRP plans 19 days, their standard is 28", { x: rx, y: y2, w: rw, h: 0.3, fontFace: BODY, fontSize: 12, bold: true, color: C.ink, margin: 0, isTextBox: true });
+  s.addImage({ path: A("pack_gaps_c.png"), x: rx, y: y2 + 0.35, w: rw, h: h2, shadow: { type: "outer", blur: 6, offset: 2, angle: 90, color: "000000", opacity: 0.25 } });
+  s.addText("Vendor replies in the demo are synthetic. Plain Excel: no portal, no logins; PDFs keep working for everyone else.", { x: rx, y: 6.55, w: rw, h: 0.4, fontFace: BODY, fontSize: 11, italic: true, color: C.muted, margin: 0, isTextBox: true });
+  s.addNotes("This is the answer to past vs future. The past: the ERP tells us every part each vendor supplies, what we paid, and the real lead times; it pre-fills both forms and gives Lisa a list of $128k of old open balances to chase or short-close. The future: the vendor answers in our format, so the three hardest problems (dropped lines, week-range dates, vendor part numbers) are prevented rather than detected. Roll out to the three vendors that cost the most reading time first: Continental's scans, Ostmark's German week ranges, Heritage's part numbers.");
 }
 
 // ------------------------------------------------------------------ 9 data traps
@@ -390,7 +428,7 @@ function table(s, header, rows, opts) {
     ["LLM-first extraction", "6 stable layouts parse deterministically and auditably. The AI reader is a fallback, off by default."],
     ["Full master-data (MDM) platform", "The crosswalk file, with source, confidence and review status, is the seed. The platform comes later."],
     ["A 0-100 vendor score", "The weights would be invented. An evidence table with denominators is more honest."],
-    ["Cloud, logins, microservices", "One buyer, one plant. A local file and a double-click launcher are enough to prove the value."],
+    ["A vendor portal or EDI (yet)", "Vendors live in email and Excel. The form fields map 1:1 to a portal or EDI 855 later; no hosting or logins now."],
   ];
   const cw = (W - 2 * M - 0.6) / 3, ch = 2.35;
   items.forEach(([t, d], i) => {
@@ -407,7 +445,8 @@ function table(s, header, rows, opts) {
 {
   const s = base("Limits", "Where this falls over, and what catches it when it does");
   table(s, ["Failure mode", "What happens today", "Mitigation / next step"], [
-    [{ text: "A new vendor or a changed layout", options: { bold: true } }, "No parser matches; the PDF shows as unreadable", "Pre-filled manual form; AI reader (BEACON_AI_FALLBACK=1); add a parser in about an hour"],
+    [{ text: "A new vendor or a changed layout", options: { bold: true } }, "No parser matches; the PDF shows as unreadable", "Beacon's acknowledgment form removes the layout problem; meanwhile manual form or AI reader (off by default)"],
+    [{ text: "Vendors don't use the form", options: { bold: true } }, "They keep sending their own PDFs", "PDFs keep working; start with the 3 vendors that cost the most reading time"],
     [{ text: "A poor scan", options: { bold: true } }, "OCR can misread a digit", "Every OCR'd doc goes to Needs your OK, shown next to the image"],
     [{ text: "Two PO lines with the same qty and price", options: { bold: true } }, "An L4 inference could pair the wrong lines", "L4 is never HIGH; always goes to review"],
     [{ text: "A stale open-PO CSV", options: { bold: true } }, "False \"PO not open\" or \"possible dropped line\"", "Pull the export each morning; show its as-of date"],
@@ -415,7 +454,7 @@ function table(s, header, rows, opts) {
     [{ text: "Task 2: value at PO price", options: { bold: true } }, "Not invoiced cost; no AP data in the extract", "Add invoice lines, then true price variance"],
     [{ text: "Task 2: the confirmation feed ends 04/03", options: { bold: true } }, "Promise metrics use POs to 03/30 only", "Ask why the feed stopped"],
     [{ text: "Task 2: no production-impact data", options: { bold: true } }, "Can rank exposure, but can't prove cost", "Link to expedites and downtime; no causal claims until then"],
-  ], { t: { x: M, y: 1.6, w: W - 2 * M, colW: [3.4, 4.1, 4.63], rowH: 0.6 }, size: 12, hsize: 13 });
+  ], { t: { x: M, y: 1.55, w: W - 2 * M, colW: [3.4, 4.1, 4.63], rowH: 0.52 }, size: 12, hsize: 13 });
 }
 
 // ------------------------------------------------------------------ 17 questions
@@ -467,8 +506,8 @@ function table(s, header, rows, opts) {
   const rx = M + lw + 0.4, rw = W - M - rx;
   const steps = [
     ["Week 1", "Shadow Lisa: run it alongside her manual check. Count misses and false alarms; tune tolerances with her."],
-    ["Week 2", "Point it at the shared acknowledgment inbox folder and schedule it for 6am, so the workbook is waiting when she arrives."],
-    ["Month 1", "Lisa approves the pending part numbers; export the crosswalk as the part-master seed."],
+    ["Week 2", "Send supplier packs to Continental, Ostmark and Heritage; attach the acknowledgment form to their new POs. Schedule the 6am run."],
+    ["Month 1", "Planning updates MRP lead times from the gap report; Lisa clears the $128k of old open balances; crosswalk becomes the part-master seed."],
     ["Monthly", "Refresh the vendor readout; take the Continental lead-time data to the call."],
   ];
   steps.forEach(([t, d], i) => {

@@ -1,11 +1,11 @@
 vendor_id,vendor_pn,beacon_pn,description,mapping_source,mapping_confidence,times_seen,first_seen,last_seen,review_status,reviewed_by,reviewed_at
-V002,APH-125,CHB-3301,"Cold-headed blank, 3301 family",ERP confirmation history (po_number+line_no join),HIGH,36,2025-09-04,2026-03-19,APPROVED (historical),ERP history,2026-09-30T14:00:28
-V002,APH-318,CHB-7715,"Cold-headed blank, 7715 family",ERP confirmation history (po_number+line_no join),HIGH,44,2025-09-17,2026-04-03,APPROVED (historical),ERP history,2026-09-30T14:00:28
-V002,APH-441,CHB-9472-3,"Cold-headed blank, 9472-3 family",ERP confirmation history (po_number+line_no join),HIGH,30,2025-09-10,2026-04-02,APPROVED (historical),ERP history,2026-09-30T14:00:28
+V002,APH-125,CHB-3301,"Cold-headed blank, 3301 family",ERP confirmation history (po_number+line_no join),HIGH,36,2025-09-04,2026-03-19,APPROVED (historical),ERP history,2026-09-30T18:54:08
+V002,APH-318,CHB-7715,"Cold-headed blank, 7715 family",ERP confirmation history (po_number+line_no join),HIGH,44,2025-09-17,2026-04-03,APPROVED (historical),ERP history,2026-09-30T18:54:08
+V002,APH-441,CHB-9472-3,"Cold-headed blank, 9472-3 family",ERP confirmation history (po_number+line_no join),HIGH,30,2025-09-10,2026-04-02,APPROVED (historical),ERP history,2026-09-30T18:54:08
 V002,APH-441-OS,CHB-9472-4,Cold-headed blank for HX-9472-4,Inferred from heritage_02.pdf (L4 Inferred (qty+price+line no)),MEDIUM,1,2026-05-13,2026-05-13,PENDING REVIEW,,
-V002,APH-4411,CHB-9472-4,"Cold-headed blank, 9472-4 family",ERP confirmation history (po_number+line_no join),HIGH,35,2025-09-04,2026-03-22,APPROVED (historical),ERP history,2026-09-30T14:00:28
-V002,K-1050,CHB-5520,"Cold-headed blank, 5520 pin family",ERP confirmation history (po_number+line_no join),HIGH,41,2025-09-03,2026-03-31,APPROVED (historical),ERP history,2026-09-30T14:00:28
-V005,K-1050,TOOL-PUNCH-STD,"Standard punch, cold header",ERP confirmation history (po_number+line_no join),HIGH,18,2025-09-14,2026-02-27,APPROVED (historical),ERP history,2026-09-30T14:00:28
+V002,APH-4411,CHB-9472-4,"Cold-headed blank, 9472-4 family",ERP confirmation history (po_number+line_no join),HIGH,35,2025-09-04,2026-03-22,APPROVED (historical),ERP history,2026-09-30T18:54:08
+V002,K-1050,CHB-5520,"Cold-headed blank, 5520 pin family",ERP confirmation history (po_number+line_no join),HIGH,41,2025-09-03,2026-03-31,APPROVED (historical),ERP history,2026-09-30T18:54:08
+V005,K-1050,TOOL-PUNCH-STD,"Standard punch, cold header",ERP confirmation history (po_number+line_no join),HIGH,18,2025-09-14,2026-02-27,APPROVED (historical),ERP history,2026-09-30T18:54:08
 V005,OST-CAR-A-100,TOOL-INS-CAR,"Carbide threading insert, A-series",Inferred from ostmark_02.pdf (L4 Inferred (qty+price+line no)),MEDIUM,1,2026-05-07,2026-05-07,PENDING REVIEW,,
-V005,WZ-9472-DS,TOOL-DIE-9472,"Heading die set, 9472 family",ERP confirmation history (po_number+line_no join),HIGH,20,2025-09-08,2026-03-31,APPROVED (historical),ERP history,2026-09-30T14:00:28
-V005,WZ-HM-EIN,TOOL-INS-CAR,Carbide die insert,ERP confirmation history (po_number+line_no join),HIGH,17,2025-09-09,2026-03-24,APPROVED (historical),ERP history,2026-09-30T14:00:28
+V005,WZ-9472-DS,TOOL-DIE-9472,"Heading die set, 9472 family",ERP confirmation history (po_number+line_no join),HIGH,20,2025-09-08,2026-03-31,APPROVED (historical),ERP history,2026-09-30T18:54:08
+V005,WZ-HM-EIN,TOOL-INS-CAR,Carbide die insert,ERP confirmation history (po_number+line_no join),HIGH,17,2025-09-09,2026-03-24,APPROVED (historical),ERP history,2026-09-30T18:54:08

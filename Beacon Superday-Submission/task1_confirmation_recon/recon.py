@@ -37,6 +37,8 @@ DEFAULT_EUR_USD = 1.09       # only if no ERP fx table is available
 ISSUE = {
     "NO_CONF":      (1, "NO_CONFIRMATION",       "No confirmation received"),
     "DROPPED":      (1, "POSSIBLE_DROPPED_LINE", "Line missing from vendor's confirmation"),
+    "DECLINED":     (1, "VENDOR_DECLINED_LINE",  "Vendor says it cannot supply this line"),
+    "FORM_INCOMPLETE": (2, "FORM_INCOMPLETE",    "Vendor's acknowledgment form left this line incomplete"),
     "QTY_SHORT":    (2, "QUANTITY_SHORT",        "Confirmed qty short"),
     "LATE":         (2, "DATE_LATE",             "Promise date after required date"),
     "PRICE_UP":     (2, "PRICE_MISMATCH",        "Price increase"),
@@ -298,6 +300,14 @@ def reconcile(po_lines, docs, xw, fx, as_of):
                             mapping_confidence=conf, times_seen=1,
                             first_seen=doc["doc_date"].isoformat(), last_seen=doc["doc_date"].isoformat(),
                             review_status="PENDING REVIEW")
+                own = dl.get("own_pn")
+                if own and own.upper() != "SAME" and own != pl["our_pn"] and (doc["vendor_id"], own) not in xw:
+                    # Vendor told us its own part number on Beacon's form: a strong hint, but still Lisa's call
+                    suggestions[(doc["vendor_id"], own)] = dict(
+                        vendor_id=doc["vendor_id"], vendor_pn=own, beacon_pn=pl["our_pn"], description=pl["description"],
+                        mapping_source="Vendor-declared on acknowledgment form %s" % doc["file"], mapping_confidence=HIGH,
+                        times_seen=1, first_seen=doc["doc_date"].isoformat(), last_seen=doc["doc_date"].isoformat(),
+                        review_status="PENDING REVIEW")
                 extracted.append(dict(
                     po_number=po, line_no=pl["line_number"], vendor_pn=vpn, part_id=pl["our_pn"],
                     confirmed_qty=dl.get("qty"), confirmed_price=dl.get("unit_price"), currency=dl.get("currency"),
@@ -321,6 +331,15 @@ def reconcile(po_lines, docs, xw, fx, as_of):
             elif not hits and all(d["doc_type"] == "ACK_NO_DETAIL" for d in active):
                 r["issues"].append("NO_DETAIL")
                 r["notes"].append("; ".join(active[0]["warnings"]))
+            elif not hits and any(pl["line_number"] in d.get("declined", {}) for d in active):
+                r["issues"].append("DECLINED")
+                r["impact"] = pl["qty"] * pl["price"]
+                r["notes"].append("Vendor's reason: %s" % "; ".join(
+                    d["declined"][pl["line_number"]] for d in active if pl["line_number"] in d.get("declined", {})))
+            elif not hits and any(pl["line_number"] in d.get("incomplete", {}) for d in active):
+                r["issues"].append("FORM_INCOMPLETE")
+                r["notes"].append("Form problem: %s" % "; ".join(
+                    d["incomplete"][pl["line_number"]] for d in active if pl["line_number"] in d.get("incomplete", {})))
             elif not hits:
                 r["issues"].append("DROPPED")
                 r["impact"] = pl["qty"] * pl["price"]
@@ -357,6 +376,9 @@ def _check_line(r, pl, hits, fx):
         r["notes"].append("Vendor PN '%s' matched by qty/price - see Review Required" % r["vendor_pn"])
     if any(d["text_source"] in ("ocr", "ai") for d in docs_used):
         r["issues"].append("OCR")
+    for h in hits:
+        if h[1].get("vendor_reason"):
+            r["notes"].append("Vendor's reason: %s" % h[1]["vendor_reason"])
     if any(d["doc_type"] == "INVOICE" for d in docs_used):
         r["issues"].append("INVOICE_ONLY")
         r["notes"].append("Invoice says goods already shipped - make sure receiving expects it")
@@ -474,6 +496,11 @@ def action_text(r):
     if "DROPPED" in i:
         parts.append("Ask %s whether they will ship line %d (%s x %d) - it is not on their acknowledgment. "
                      "If not, receiving will be short." % (v, r["line_number"], r["our_pn"], r["qty"]))
+    if "DECLINED" in i:
+        parts.append("%s says it cannot supply line %d (%s x %d). Find another source or re-plan, and tell planning today." % (
+            v, r["line_number"], r["our_pn"], r["qty"]))
+    if "FORM_INCOMPLETE" in i:
+        parts.append("Send the form back to %s: line %d is incomplete." % (v, r["line_number"]))
     if "NO_CONF" in i:
         parts.append("Chase %s for an acknowledgment." % v)
     if "NO_DETAIL" in i:
@@ -569,7 +596,7 @@ def run(confirmations, pos_csv, vendors_csv, erp=None, crosswalk=None, as_of=Non
     parsed = {}
     known = store.known_hashes()
     new_docs = 0
-    for f in sorted(glob.glob(os.path.join(confirmations, "*.pdf"))):
+    for f in sorted(glob.glob(os.path.join(confirmations, "*.pdf")) + glob.glob(os.path.join(confirmations, "*.xlsx"))):
         h = file_hash(f)
         if h in known:
             continue
@@ -588,7 +615,8 @@ def run(confirmations, pos_csv, vendors_csv, erp=None, crosswalk=None, as_of=Non
 
     xlsx = os.path.join(out, "PO_Confirmation_Check_%s.xlsx" % last["as_of"].isoformat())
     stats = write_workbook(xlsx, last["results"], last["exceptions"], last["review"], last["suggestions"], last["docs"],
-                           last["vendors"], store.crosswalk(), last["as_of"], item_status=workflow.item_status(store))
+                           last["vendors"], store.crosswalk(), last["as_of"], item_status=workflow.item_status(store),
+                           backlog=last.get("backlog"))
     stats = dict([("New documents this run", new_docs), ("Edits read back from last workbook", feedback),
                   ("Items auto-resolved since last run", last["resolved"])] + list(stats.items()))
     write_extracted_csv(os.path.join(out, "confirmation_lines_extracted.csv"), last["extracted"])
