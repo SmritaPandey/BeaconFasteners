@@ -13,6 +13,7 @@ Writes:
 import argparse
 import html
 import os
+import pathlib
 import sys
 
 import numpy as np
@@ -824,7 +825,7 @@ def export_pdf(html_path, pdf_path):
             b = p.chromium.launch(executable_path=os.environ.get("BEACON_CHROMIUM") or None)
             pg = b.new_page()
             pg.emulate_media(media="print", color_scheme="light")
-            pg.goto("file://" + os.path.abspath(html_path))
+            pg.goto(pathlib.Path(html_path).resolve().as_uri())
             pg.evaluate("document.querySelectorAll('details').forEach(d => d.open = true)")
             pg.pdf(path=pdf_path, format="Letter", print_background=True,
                    margin=dict(top="0.5in", bottom="0.5in", left="0.4in", right="0.4in"))
@@ -852,7 +853,7 @@ def main():
     f["backtest"] = backtest(a["rec"])
     os.makedirs(a_.out, exist_ok=True)
     write_xlsx(os.path.join(a_.out, "Vendor_Readout.xlsx"), a, f, cw)
-    with open(os.path.join(a_.out, "vendor_readout.html"), "w") as fh:
+    with open(os.path.join(a_.out, "vendor_readout.html"), "w", encoding="utf-8") as fh:
         fh.write(html_page(a, f, cw, standalone=True))
     pdf = export_pdf(os.path.join(a_.out, "vendor_readout.html"), os.path.join(a_.out, "Vendor_Readout.pdf"))
     print("Call first: %s" % f["call_first"]["vendor"])

@@ -16,6 +16,7 @@ Data traps handled (all verified independently - see DATA_QUALITY):
   * Ostmark (EUR vendor): po_line.unit_price is already USD (its EUR confirmations
     are exactly 0.92 x PO price) -> no FX on received value
 """
+import pathlib
 import sqlite3
 from datetime import date
 
@@ -28,7 +29,7 @@ LATE_PERIOD = ("2026-01", "2026-05")
 
 
 def load(db_path):
-    con = sqlite3.connect("file:%s?mode=ro" % db_path, uri=True)
+    con = sqlite3.connect(pathlib.Path(db_path).resolve().as_uri() + "?mode=ro", uri=True)  # works with Windows paths and spaces
     q = lambda s: pd.read_sql_query(s, con)
     t = dict(
         vendor=q("select * from vendor_master"),

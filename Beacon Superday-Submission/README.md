@@ -21,7 +21,14 @@ Tinicum FDE super-day case. The goal was not to "extract data from PDFs": it was
 
 Windows: `run_all.bat C:\path\to\data`.
 
-**Prerequisites:** Python 3.9+, and [Tesseract](https://tesseract-ocr.github.io/) for the 4 scanned PDFs (`brew install tesseract` · `sudo apt install tesseract-ocr`). Without Tesseract everything still runs; the scans are listed as "could not read" instead of being silently skipped.
+**Prerequisites:** Python 3.9+, and [Tesseract](https://tesseract-ocr.github.io/) for the 4 scanned PDFs:
+- macOS: `brew install tesseract`
+- Linux: `sudo apt install tesseract-ocr`
+- Windows: the [UB-Mannheim installer](https://github.com/UB-Mannheim/tesseract/wiki). It is found in `C:\Program Files\Tesseract-OCR` automatically; elsewhere, set `BEACON_TESSERACT` to the `.exe`.
+
+Without Tesseract everything still runs, and the scans are listed as "could not read" instead of being silently skipped.
+
+Tested from a fresh unzip, in a path with spaces, on Python 3.9 and 3.13 (Linux). All dependencies install as prebuilt packages on Windows x64 and macOS (Apple Silicon and Intel).
 
 <details><summary>Step by step instead</summary>
 
