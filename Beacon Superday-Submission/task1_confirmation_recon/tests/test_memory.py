@@ -102,6 +102,26 @@ class TestManualAndAI(unittest.TestCase):
 
 
 @unittest.skipUnless(os.path.isdir(os.path.join(DATA, "confirmations")), "case data not found (set BEACON_DATA)")
+class TestMovedFolder(unittest.TestCase):
+    """The memory file travels (new folder, another PC, the submission zip): known PDFs must still be read."""
+
+    def test_memory_survives_moved_confirmations(self):
+        work = tempfile.mkdtemp()
+        a, b, out = (os.path.join(work, x) for x in ("a", "b", "out"))
+        shutil.copytree(os.path.join(DATA, "confirmations"), a)
+        args = (os.path.join(DATA, "open_pos.csv"), os.path.join(DATA, "vendor_master.csv"),
+                os.path.join(DATA, "beacon_erp.db"), None)
+        day1 = recon.run(a, *args, as_of="2026-05-17", out=out)
+        shutil.move(a, b)                                   # the original folder is gone
+        day2 = recon.run(b, *args, as_of="2026-05-17", out=out)
+        self.assertEqual(day2["stats"]["New documents this run"], 0)
+        self.assertEqual(day2["stats"]["  unreadable (manual)"], 0)
+        self.assertEqual(sorted(day1["results"]), sorted(day2["results"]))
+        self.assertIn("DROPPED", day2["results"][("PO-4500050001", 2)]["issues"])
+        shutil.rmtree(work, ignore_errors=True)
+
+
+@unittest.skipUnless(os.path.isdir(os.path.join(DATA, "confirmations")), "case data not found (set BEACON_DATA)")
 class TestDayTwo(unittest.TestCase):
     """Day 1: real files. Lisa edits the workbook. Day 2: a SYNTHETIC revised ack arrives."""
 

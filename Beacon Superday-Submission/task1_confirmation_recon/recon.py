@@ -599,6 +599,7 @@ def run(confirmations, pos_csv, vendors_csv, erp=None, crosswalk=None, as_of=Non
     for f in sorted(glob.glob(os.path.join(confirmations, "*.pdf")) + glob.glob(os.path.join(confirmations, "*.xlsx"))):
         h = file_hash(f)
         if h in known:
+            store.relocate_document(h, f)   # same file, maybe a new folder or another PC: read it from here
             continue
         parsed[f] = read_document(f, vendors)
         store.add_document(h, os.path.basename(f), f, parsed[f])

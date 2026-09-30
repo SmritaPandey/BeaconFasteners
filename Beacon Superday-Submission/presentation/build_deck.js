@@ -117,6 +117,31 @@ function table(s, header, rows, opts) {
   s.addText("Design test for both: could the user act on it tomorrow morning without me in the room?", { x: M, y: 6.35, w: W - 2 * M, h: 0.4, fontFace: HEAD, fontSize: 16, italic: true, color: C.slate, margin: 0, isTextBox: true });
 }
 
+// ------------------------------------------------------------------ 3b approach / time split
+{
+  const s = base("Approach · how I split the time", "Riskiest first: the data, then Task 1 end to end, then Task 2");
+  const steps = [
+    ["1", "Profile the data", "Before any code: 6 PDF layouts (4 scans, 1 German, 1 vendor with its own part numbers); an undocumented ERP with traps that change the answer.", "A wrong number would sink both tasks, and it was the cheapest thing to check first."],
+    ["2", "Task 1 end to end", "PDF → match → checks → Excel. All 35 PDFs through the pipeline before polishing any one parser.", "Lisa's pain is daily, and a dropped line can only be seen when the whole pipeline works."],
+    ["3", "Task 2 on the same data", "Cleaned receipts, then value by month, the vendor table, and who to call first, with definitions.", "The ERP work feeds Task 1 too: FX rates, the part-number crosswalk, vendor history."],
+    ["4", "Only then, extras", "Memory across days, the desk app, the vendor forms. Each was added only after both tasks ran.", "\"Useful beats impressive\": nothing extra went in until the basics were done."],
+    ["5", "Stop and write", "This deck, the README, and a clean run from the zip, as a grader would do it.", "The presentation counts as much as the code."],
+  ];
+  const y0 = 1.65, rh = 1.02;
+  s.addText("What", { x: M + 0.6, y: y0 - 0.05, w: 2.6, h: 0.3, fontFace: BODY, fontSize: 11, bold: true, color: C.muted, margin: 0, isTextBox: true });
+  s.addText("What it covered", { x: M + 3.3, y: y0 - 0.05, w: 5.0, h: 0.3, fontFace: BODY, fontSize: 11, bold: true, color: C.muted, margin: 0, isTextBox: true });
+  s.addText("Why in this order", { x: M + 8.55, y: y0 - 0.05, w: 3.5, h: 0.3, fontFace: BODY, fontSize: 11, bold: true, color: C.muted, margin: 0, isTextBox: true });
+  steps.forEach(([k, t, d, why], i) => {
+    const y = y0 + 0.3 + i * rh;
+    card(s, M, y, W - 2 * M, rh - 0.12, i % 2 ? C.white : C.tint);
+    badge(s, M + 0.1, y + (rh - 0.12 - 0.42) / 2, k, C.accent);
+    s.addText(t, { x: M + 0.6, y, w: 2.6, h: rh - 0.12, fontFace: BODY, fontSize: 15, bold: true, color: C.ink, margin: 0, valign: "middle", isTextBox: true });
+    s.addText(d, { x: M + 3.3, y, w: 5.0, h: rh - 0.12, fontFace: BODY, fontSize: 12, color: C.ink, margin: 0, valign: "middle", isTextBox: true });
+    s.addText(why, { x: M + 8.55, y, w: W - 2 * M - 8.7, h: rh - 0.12, fontFace: BODY, fontSize: 12, italic: true, color: C.slate, margin: 0, valign: "middle", isTextBox: true });
+  });
+  s.addNotes("Say roughly how long each step took you. The point to land: the order was set by risk. Data traps or a broken dropped-line check would sink the work; a plainer UI would not. When something had to give, polish gave, not coverage.");
+}
+
 // ------------------------------------------------------------------ 4 product decision
 {
   const s = base("Task 1 · Product decision", "An exception list Lisa opens in Excel, not a dashboard to learn");
@@ -230,7 +255,7 @@ function table(s, header, rows, opts) {
   s.addText("Why keep the first promise", { x: rx + 0.3, y: 1.9, w: rw - 0.6, h: 0.4, fontFace: HEAD, fontSize: 17, bold: true, color: C.ink, margin: 0, isTextBox: true });
   s.addText("If every revised date overwrites the last one, every PO ends up looking on time and vendor performance can't be measured. The same trap is in the ERP: 30 confirmations were superseded.", { x: rx + 0.3, y: 2.75, w: rw - 0.6, h: 1.4, fontFace: BODY, fontSize: 13, color: C.slate, margin: 0, valign: "top", isTextBox: true });
   s.addText("Tested", { x: rx + 0.3, y: 4.2, w: rw - 0.6, h: 0.35, fontFace: HEAD, fontSize: 17, bold: true, color: C.ink, margin: 0, isTextBox: true });
-  s.addText("58 automated tests. TestDayTwo runs day 1 on the real PDFs, applies Lisa's Excel edits, then feeds a revised vendor PDF on day 2 and checks each row above.", { x: rx + 0.3, y: 4.6, w: rw - 0.6, h: 1.9, fontFace: BODY, fontSize: 13, color: C.slate, margin: 0, valign: "top", isTextBox: true });
+  s.addText("59 automated tests. TestDayTwo runs day 1 on the real PDFs, applies Lisa's Excel edits, then feeds a revised vendor PDF on day 2 and checks each row above.", { x: rx + 0.3, y: 4.6, w: rw - 0.6, h: 1.9, fontFace: BODY, fontSize: 13, color: C.slate, margin: 0, valign: "top", isTextBox: true });
   s.addNotes("This is the answer to 'is it a one-time script?'. The store is one SQLite file: items, notes, append-only promise history, crosswalk approvals and file hashes. The Excel and the app read and write the same store.");
 }
 
