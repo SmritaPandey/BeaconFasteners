@@ -11,11 +11,11 @@ Excel workbook for Lisa. Sheet order is the order she'd work in:
   8. Run Summary       - counts + validation checks (did every PDF / PO line get handled?)
 """
 from collections import defaultdict
-from datetime import datetime
+from datetime import date, datetime
 
 import xlsxwriter
 
-from recon import ISSUE, SEV_LABEL, action_text, fmt_d
+from recon import ISSUE, PRICE_TOL_FX_PCT, SEV_LABEL, action_text, fmt_d
 
 
 def _dt(d):
@@ -62,8 +62,10 @@ def write_workbook(path, results, exceptions, review, suggestions, docs, vendors
     ws = wb.add_worksheet("Action List")
     ws.write(0, 0, "PO confirmation check - as of %s:  %d open PO lines | %d items need attention | %d lines fully clean" % (
         fmt_d(as_of), len(rows), n_action, sum(1 for r in rows if r["sev"] >= 4)), T)
-    ws.write(1, 0, "Worst first. Red = act today, yellow = this week, blue = check. Type Yes in 'Done?' and add Notes - the next "
-                   "run reads them back, so handled items stay handled. Uncertain matches are on 'Review Required'.", W)
+    ws.merge_range(1, 0, 1, 9, "Worst first. Red = act today, yellow = this week, blue = check. Type Yes in 'Done?' and add Notes - "
+                   "the next run reads them back, so handled items stay handled. Uncertain matches are on 'Review Required'. "
+                   "How it works: 'Read Me' tab.", W)
+    ws.set_row(1, 30)
     cols = ["Priority", "Issue type", "Vendor", "PO", "Line", "Our part", "Vendor PN", "What happened", "What to do",
             "Detail", "Ordered qty", "Confirmed qty", "Qty var", "PO price", "Confirmed price (USD)", "Price var %",
             "$ at stake", "Required", "Promised", "Days late", "Match confidence", "Source file(s)", "Vendor email",
@@ -81,7 +83,6 @@ def write_workbook(path, results, exceptions, review, suggestions, docs, vendors
         ws.write(rr, 26, key)
         return st == "Done"
 
-    done_rows = []
     rr = 4
     for e in sorted(exceptions, key=lambda e: e["sev"]):
         ws.write(rr, 0, SEV_LABEL[e["sev"]], sev_fmt[e["sev"]])
@@ -196,6 +197,80 @@ def write_workbook(path, results, exceptions, review, suggestions, docs, vendors
             ws.write_number(i, 26, r["promise_changes"], N)
     ws.freeze_panes(1, 4)
     ws.autofilter(0, 0, len(results), len(cols) - 1)
+
+    # ---- 3b. Focused views: one tab per job (AP, planner, receiving, master data) ----------
+    def view(name, intro, picked, cols):
+        """cols: [(header, width, fn(r) -> value, format)]"""
+        vs = wb.add_worksheet(name)
+        vs.merge_range(0, 0, 0, min(len(cols) - 1, 9), intro, W)
+        vs.set_row(0, 45)
+        header(vs, 2, [c[0] for c in cols], [c[1] for c in cols])
+        vs.set_row(2, 30)
+        for i, r in enumerate(picked, 3):
+            for c, (_, _, fn, fmt) in enumerate(cols):
+                v = fn(r)
+                if v is None or v == "":
+                    continue
+                if isinstance(v, date):
+                    vs.write_datetime(i, c, _dt(v), D)
+                elif isinstance(v, (int, float)):
+                    vs.write_number(i, c, v, fmt)
+                else:
+                    vs.write(i, c, v, fmt or W)
+        if not picked:
+            vs.write(3, 0, "Nothing in this category this run.")
+        vs.freeze_panes(3, 3)
+        vs.autofilter(2, 0, max(len(picked) + 2, 3), len(cols) - 1)
+
+    key_cols = [("Priority", 12, lambda r: SEV_LABEL[r["sev"]], None), ("Vendor", 22, lambda r: r["vendor_name"], None),
+                ("PO", 15, lambda r: r["po_number"], None), ("Line", 5, lambda r: r["line_number"], N),
+                ("Our part", 14, lambda r: r["our_pn"], None)]
+    act = [("What to do", 55, action_text, None), ("Source file(s)", 20, lambda r: r["files"], None)]
+    has = lambda *k: [r for r in rows if set(r["issues"]) & set(k)]
+    view("Dropped & Unconfirmed",
+         "Open PO lines with no usable confirmation line: possibly dropped, never acknowledged, acknowledged without detail, "
+         "declined, or left incomplete on Beacon's form. These are the lines that become surprise shorts in receiving.",
+         has("DROPPED", "NO_CONF", "NO_DETAIL", "DECLINED", "FORM_INCOMPLETE"),
+         key_cols + [("Description", 30, lambda r: r["description"], None), ("Ordered qty", 10, lambda r: r["qty"], N),
+                     ("Line value $", 11, lambda r: r["qty"] * r["price"], M), ("Required", 11, lambda r: r["required"], None),
+                     ("Days until required", 9, lambda r: r["days_to_required"], N),
+                     ("Status", 26, lambda r: ", ".join(ISSUE[i][2] for i in r["issues"] if ISSUE[i][0] <= 3), None)] + act)
+    view("Price Variances",
+         "Confirmed price differs from the PO price (USD: any change; EUR: more than the FX tolerance after conversion at the "
+         "ERP rate for the PO month). Resolve before the invoice reaches AP.",
+         has("PRICE_UP", "PRICE_DOWN"),
+         key_cols + [("Ordered qty", 10, lambda r: r["qty"], N), ("PO price (USD)", 11, lambda r: r["price"], P),
+                     ("Confirmed price", 11, lambda r: r["conf_price"], P), ("Ccy", 5, lambda r: r["conf_ccy"], None),
+                     ("Confirmed (USD)", 11, lambda r: r["conf_price_usd"], P), ("Var per unit (USD)", 11, lambda r: r["price_var"], P),
+                     ("Var %", 8, lambda r: r["price_var_pct"] / 100.0, PCT), ("$ on this line", 11, lambda r: r["impact"], M)] + act)
+    view("Date Variances",
+         "Lines where the vendor's promise differs from our required date (positive = late). The first promise is kept "
+         "forever, so a vendor that keeps moving the date stays visible.",
+         [r for r in rows if r["date_var"]],
+         key_cols + [("Required", 11, lambda r: r["required"], None), ("Promised", 11, lambda r: r["promise"], None),
+                     ("Days late (+) / early (-)", 10, lambda r: r["date_var"], N),
+                     ("First promise", 11, lambda r: r.get("first_promise"), None),
+                     ("Times vendor moved date", 9, lambda r: r.get("promise_changes") or 0, N),
+                     ("Days until required", 9, lambda r: r["days_to_required"], N)] + act)
+    view("Quantity Variances",
+         "Confirmed quantity differs from ordered. Shorts protect production (re-order or chase the balance); overs "
+         "protect AP and stores (refuse the overage).",
+         has("QTY_SHORT", "QTY_OVER"),
+         key_cols + [("Ordered qty", 10, lambda r: r["qty"], N), ("Confirmed qty", 10, lambda r: r["conf_qty"], N),
+                     ("Short (-) / over (+)", 10, lambda r: r["qty_var"], N),
+                     ("Var %", 8, lambda r: r["qty_var"] / r["qty"], PCT), ("$ at stake", 11, lambda r: r["impact"], M),
+                     ("Required", 11, lambda r: r["required"], None)] + act)
+    um = [e for e in exceptions if e["code"] in ("UNMATCHED_DOC_LINE", "PO_NOT_OPEN")] + \
+         [dict(code="PART_NUMBER_REVIEW", vendor=v["vendor"], po=v["po"], issue="Vendor part number not in the approved crosswalk",
+               detail=v["reason"], action=v["recommended"], file=v["file"]) for v in review if v["kind"] == "Part number"]
+    view("Unmatched Vendor Lines",
+         "Vendor lines or documents that could not be tied to a Beacon PO line with confidence: unknown part numbers, lines "
+         "that fit no PO line, and confirmations for POs that are not open. This is the master-data work queue.",
+         um,
+         [("Issue", 22, lambda e: e["code"], None), ("Vendor", 22, lambda e: vname(e["vendor"]), None),
+          ("PO", 15, lambda e: e["po"], None), ("What", 40, lambda e: e["issue"], None),
+          ("Detail", 70, lambda e: e["detail"], None), ("What to do", 50, lambda e: e["action"], None),
+          ("Source file", 20, lambda e: e["file"], None)])
 
     # ---- 4. Vendor Summary -----------------------------------------------
     ws = wb.add_worksheet("Vendor Summary")
@@ -323,6 +398,49 @@ def write_workbook(path, results, exceptions, review, suggestions, docs, vendors
     for i, (k, v) in enumerate(stats.items(), 2):
         ws.write(i, 0, k, B if k.startswith("CHECK") else None)
         ws.write(i, 1, v)
+    # ---- 10. Read Me -----------------------------------------------------
+    ws = wb.add_worksheet("Read Me")
+    ws.set_column(0, 0, 30)
+    ws.set_column(1, 1, 110)
+    ws.write(0, 0, "Beacon PO Confirmation Control Tower - how to use this workbook", T)
+    lines = [
+        ("What it is", "Every vendor acknowledgment received, checked line by line against the open PO list. Built by a script, "
+                       "not by hand; every number traces to a source file (see 'Documents' and 'All PO Lines')."),
+        ("Start here", "'Action List': only what needs you, worst first. Red = act today, yellow = this week, blue = check. "
+                       "Type Yes in 'Done?' and add Notes; the next run reads them back, so handled items stay handled."),
+        ("Refresh", "Drop the day's PDFs (or returned Beacon acknowledgment forms) in the confirmations folder and run the daily "
+                    "check (double-click 'Run daily check (Excel only)', or: python3 recon.py --confirmations ... --out ...). "
+                    "Replace open_pos.csv with today's ERP export first."),
+        ("Tabs by job", "Buyer: Action List, Dropped & Unconfirmed, Draft Emails. AP: Price Variances. Planner: Date Variances. "
+                        "Receiving: Quantity Variances. Master data: Unmatched Vendor Lines, PN Crosswalk (type APPROVED to accept a "
+                        "mapping). Audit: All PO Lines, Documents, Review Required, Run Summary. History: Old Open Balances (ERP)."),
+        ("Matching", "L1 Beacon part number on the document, L2 approved vendor part-number crosswalk, L3 identical description: "
+                     "HIGH confidence, auto-matched. L4 qty + price (+ line no.) only: MEDIUM, matched for the checks but always sent "
+                     "to Review Required. L5 nothing fits, or two PO lines fit equally: left unmatched, never guessed."),
+        ("Tolerances", "Quantity: any difference. USD price: any difference (ERP prices are exact to 4 decimals). EUR price: flagged "
+                       "if more than %.1f%% off after conversion at the ERP rate for the PO month. Dates: any promise after the required "
+                       "date. A missing line is called 'possible dropped line', not 'dropped', until the vendor confirms." % PRICE_TOL_FX_PCT),
+        ("Never", "Sends anything to a vendor (emails are drafts), writes to the ERP, or approves a part-number mapping on its own."),
+        ("Known limits", "A new vendor layout is flagged unreadable until a parser is added (or the vendor uses Beacon's form). OCR can "
+                         "misread a digit: every scanned document is on Review Required. A stale open-PO export causes false "
+                         "'PO not open' / 'possible dropped line' flags."),
+        ("Suggested escalation", "Dropped or declined line: buyer calls vendor same day, then tells planning. Price change: buyer "
+                                 "pushes back, AP holds the invoice until resolved. Late promise that hits a customer date: buyer + planner "
+                                 "+ plant manager. (To be confirmed with Lisa and the plant manager.)"),
+    ]
+    ws.write(2, 1, "Meaning", H)
+    BT = wb.add_format({"bold": True, "valign": "top"})
+    for i, (k, v) in enumerate(lines, 3):
+        ws.write(i, 0, k, BT)
+        ws.write(i, 1, v, W)
+    r0 = len(lines) + 5
+    ws.write(r0 - 1, 0, "Issue type", H)
+    ws.write(r0 - 1, 1, "Severity - meaning", H)
+    for i, (sev, code, label) in enumerate(sorted(set(ISSUE.values())), r0):
+        ws.write(i, 0, code)
+        ws.write(i, 1, "%s - %s" % (SEV_LABEL[sev], label), W)
+    ws.write(2, 0, "Topic", H)
+
     wb.close()
     return stats
 

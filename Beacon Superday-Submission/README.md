@@ -1,161 +1,216 @@
-# Beacon Fasteners: Confirmation Desk + Vendor Readout
+# Beacon Fasteners · PO Confirmation Control Tower & Vendor Readout
 
-Tinicum FDE super-day case study. Two deliverables share one engine:
+Tinicum FDE super-day case. The goal was not to "extract data from PDFs": it was to give Beacon's buyer a **daily, auditable action queue** and give the plant manager an **evidence-based answer about vendors**, without asking the plant to change systems first.
 
-| | For | What it is | Open this |
+| Deliverable | For | Answers | Open |
 |---|---|---|---|
-| **Task 1** | Lisa, senior buyer | **Confirmation Desk.** Reads vendor acknowledgment PDFs, checks them against the open PO list and produces a to-do list that remembers yesterday. Use it as an Excel workbook, or as a simple browser app. | `output/PO_Confirmation_Check_2026-05-17.xlsx` |
-| **Task 2** | Plant manager | **Vendor performance readout** built from the ERP extract: received value by month, a vendor-by-vendor comparison, and which vendor to call first and why. | `output/vendor_readout.html` (or `output/Vendor_Readout.xlsx`) |
-| **Vendor forms** | Vendors, via Lisa | **Fix it at the source.** Beacon's own Excel acknowledgment form per PO, and a supplier information pack per vendor, both pre-filled from the ERP. Returned forms load straight into the daily check. | `output/vendor_forms/` |
-| Deck | Tinicum panel | The 30-minute walkthrough | `presentation/Beacon_FDE_Casestudy.pptx` |
+| **Task 1: Confirmation Control Tower** | Lisa, senior buyer | *Which PO lines need my attention today, and what do I do?* | `output/PO_Confirmation_Check_2026-05-17.xlsx` |
+| **Task 2: Vendor performance readout** | Plant manager | *Received value by month · how vendors compare · who to call first and why · which open orders to watch* | `output/Vendor_Readout.pdf` (also `.html`, `.xlsx`) |
+| **Vendor forms** | Vendors, via Lisa | Beacon's own acknowledgment form and supplier pack, pre-filled from the ERP, so discrepancies are prevented, not just detected | `output/vendor_forms/` |
+| **Presentation** | Tinicum panel | What I built and why, what I didn't, where it breaks, what I'd ask | `presentation/Beacon_FDE_Casestudy.pptx` |
 
 ---
 
-## 1. Run it on the data (graders)
+## 1. Run it (graders)
 
-Needs Python 3.9+ and [Tesseract](https://tesseract-ocr.github.io/) for the scanned PDFs (`brew install tesseract` / `apt install tesseract-ocr`).
+**One command** (macOS/Linux). It checks prerequisites, installs into a local `.venv`, runs both tasks, generates the vendor forms and runs all tests:
 
 ```bash
-cd task1_confirmation_recon
-python3 -m pip install -r requirements.txt
-
-# Task 1 - the Excel workbook Lisa opens in the morning
-python3 recon.py --confirmations /data/confirmations --pos /data/open_pos.csv \
-                 --vendors /data/vendor_master.csv --erp /data/beacon_erp.db --out ../output
-
-# Task 2 - the plant manager's readout (workbook + one-page HTML)
-cd ../task2_vendor_readout
-python3 build_readout.py --erp /data/beacon_erp.db --out ../output
-
-# Tests (59 checks; the end-to-end ones read the case data from BEACON_DATA and are skipped without it)
-cd ../task1_confirmation_recon && BEACON_DATA=/data python3 -m unittest discover -s tests -v
+./run_all.sh /data          # or the path to the case data folder
 ```
 
-The zip ships the generated outputs but not the tool's memory file, so the first run above starts clean and reads all 35 PDFs (the 4 scans take a few seconds each). Runs after that remember what they have seen.
+Windows: `run_all.bat C:\path\to\data`.
 
-`--erp` is optional for Task 1. Without it, the tool uses a default EUR rate and skips the vendor-history hints.
+**Prerequisites:** Python 3.9+, and [Tesseract](https://tesseract-ocr.github.io/) for the 4 scanned PDFs (`brew install tesseract` · `sudo apt install tesseract-ocr`). Without Tesseract everything still runs; the scans are listed as "could not read" instead of being silently skipped.
 
-## 2. Use it day to day (Lisa)
+<details><summary>Step by step instead</summary>
 
-**Option A: the browser app.** Double-click `task1_confirmation_recon/Start Confirmation Desk.command` (Mac) or `.bat` (Windows). The first run sets itself up, then your browser opens:
+```bash
+python3 -m venv .venv && . .venv/bin/activate
+pip install -r task1_confirmation_recon/requirements.txt
 
-1. Drag the day's acknowledgment PDFs into the sidebar and click **Check them**.
-2. **Today's list:** red means act today, orange means this week, blue means check. Each row says *what happened* and *what to do*. Tick **Done** and add a note; both are saved.
-3. **Needs your OK:** new vendor part numbers (one click to approve), scanned pages shown next to what was read from them, and a form for any PDF nothing could read. The form is pre-filled from the PO, so it's mostly checking rather than typing.
-4. **Chase & due soon:** the next 14 days, ranked by risk, plus POs waiting for an acknowledgment.
-5. **Draft emails:** one ready-to-edit email per vendor to copy into Outlook. The tool never sends anything.
-6. **Download Excel** at any time.
-7. **Vendor forms:** download the acknowledgment form to attach to a PO, or a vendor's supplier pack; upload a returned pack to check it (section 4).
+cd task1_confirmation_recon
+python3 recon.py --confirmations /data/confirmations --pos /data/open_pos.csv \
+                 --vendors /data/vendor_master.csv --erp /data/beacon_erp.db --out ../output
+python3 vendor_forms.py ack     --pos /data/open_pos.csv --vendors /data/vendor_master.csv --erp /data/beacon_erp.db --out ../output/vendor_forms/acknowledgment_forms
+python3 vendor_forms.py onboard --pos /data/open_pos.csv --vendors /data/vendor_master.csv --erp /data/beacon_erp.db --out ../output/vendor_forms/supplier_packs
+BEACON_DATA=/data python3 -m unittest discover -s tests        # 59 tests
 
-**Option B: Excel only.** Run `Run daily check (Excel only).command`, or the `recon.py` command above, each morning. Type `Yes` in **Done?** and add **Notes** in the workbook, and type `APPROVED` next to a part number on the **PN Crosswalk** tab. The next run reads those edits back, so handled items stay handled.
+cd ../task2_vendor_readout
+python3 build_readout.py --erp /data/beacon_erp.db --out ../output
+BEACON_DATA=/data python3 -m unittest discover -s tests        # 8 tests
+```
+</details>
 
-Both options share the same memory, so Excel and the app always agree.
+Expected on the case data: 35 PDFs read (31 text, 4 OCR), 44 open PO lines, 1 act-today line + 1 document-level exception, 22 clean lines, and both built-in checks `PASS`. Task 2 prints `Call first: Continental Quality Heat Treat`.
 
-### What "remembers" means
+The zip ships the generated outputs but not the tool's memory file, so your first run starts clean. `Vendor_Readout.pdf` is produced only when Playwright + Chromium are available; otherwise print the HTML.
+
+---
+
+## 2. Task 1 · PO Confirmation Control Tower
+
+**The decision:** which open PO lines need Lisa today, and what should she do? The hard part is what is *not* on the page: a line the vendor silently dropped. So the tool starts from the **open PO list** and looks for each line in the acknowledgments, never the other way round.
+
+### Pipeline
+
+```
+PDF ──► parsers.py   one parser per vendor layout (6) · OCR for scans · German labels and "KW 20-22" week ranges
+         │           → canonical record: vendor, PO, line, part, qty, price, currency, promise date, source file
+         ▼
+recon.py  tiered match of each document line to a PO line, then the checks below
+         ▼
+workflow.py  memory (store.py, one SQLite file): to-do items, Lisa's notes, promise history, part-number decisions
+         ▼
+report.py ──► Excel workbook          desk_app.py ──► optional browser app (same engine, same memory)
+```
+
+### Matching: automate the certain, route the uncertain to a human
+
+| Level | Evidence | Confidence | What happens | This week |
+|---|---|---|---|---|
+| L1 | Beacon part number printed on the vendor document | HIGH | auto-match | 23 lines |
+| L2 | approved (vendor, vendor part no.) crosswalk entry | HIGH | auto-match | 5 |
+| L3 | normalized description equals the PO description | HIGH | auto-match | 9 |
+| L4 | only qty + price (+ line no.) agree | MEDIUM | matched for the checks, **always** sent to *Review Required* | 5 |
+| L5 | nothing fits, or two PO lines fit equally | none | left unmatched; never guessed | 0 |
+
+84% of open lines matched automatically at HIGH confidence; every lower-confidence match is visible for review.
+
+### Exception rules
+
+| Issue type | Rule | Severity | Recommended action |
+|---|---|---|---|
+| `POSSIBLE_DROPPED_LINE` | vendor acknowledged the PO but this line is missing | Act today | Ask vendor whether it ships; warn receiving |
+| `VENDOR_DECLINED_LINE` | vendor chose *Cannot supply* on Beacon's form | Act today | Re-source or re-plan; tell planning |
+| `NO_CONFIRMATION` | no acknowledgment after the chase window (3 days, configurable) | Act today | Chase the vendor |
+| `PO_NOT_OPEN` | acknowledgment for a PO that is not on the open list | Act today | Tell vendor not to ship; find the intended PO |
+| `QUANTITY_SHORT` | confirmed qty < ordered | This week | Balance later, or re-order |
+| `PRICE_MISMATCH` (up) | USD: any change; EUR: > 1% after ERP FX for the PO month | This week | Push back before the invoice reaches AP |
+| `DATE_LATE` | promise after required date | This week | Expedite, or warn planning |
+| `MISSING_REQUIRED_FIELD` | acknowledged with no qty/date | This week | Ask for a firm qty and date |
+| `FORM_INCOMPLETE` | Beacon form line blank or date not a real date | This week | Send the form back (draft email lists the line) |
+| `PART_NUMBER_UNMATCHED` | matched only at L4 | Check | Approve or reject the vendor part number |
+| `DATE_INCONSISTENT` / `DATE_AMBIGUOUS` | document dated before the PO, promise before the document, or a week range | Check | Ask vendor to re-confirm |
+| `QUANTITY_OVER`, `PRICE_MISMATCH` (down), `INVOICE_NOT_ACK` | as named | Check | Confirm, or tell receiving / AP |
+
+Within a severity, the Action List is ordered by **money at stake** (line value for a dropped line, the variance × quantity for price/qty), then by required date. Revisions supersede earlier acknowledgments, split confirmations are summed, and a re-sent PDF is recognised by its content hash.
+
+### The workbook: one tab per job
+
+| Tab | For | Contents |
+|---|---|---|
+| **Action List** | Lisa | Only exceptions, worst first, each with *what happened* and *what to do*. `Done?` and `Notes` are read back on the next run |
+| Review Required | Lisa | Every uncertain match, with the reason and the evidence |
+| All PO Lines | Audit | One row per open PO line: ordered vs confirmed, match method, confidence, source file, first promise (never overwritten) |
+| Dropped & Unconfirmed | Buyer / receiving | Lines with no usable confirmation |
+| Price Variances | Buyer / AP | PO vs confirmed price, per unit and on the line |
+| Date Variances | Buyer / planner | Required vs promised, days late, how often the vendor moved the date |
+| Quantity Variances | Buyer / receiving | Short and over |
+| Unmatched Vendor Lines | Master data | Unknown vendor part numbers, lines that fit no PO line, POs not open |
+| Vendor Summary · Draft Emails | Buyer | Per-vendor counts, and one ready-to-edit email per vendor (never sent by the tool) |
+| Documents · PN Crosswalk · Run Summary | Audit / master data | Every file with its status; the part-number crosswalk (type `APPROVED`); run statistics and the built-in checks |
+| Old Open Balances | Buyer | From the ERP: 40 past-due lines with qty still open ($128k): chase or short-close |
+| Read Me | Everyone | Refresh steps, rules, tolerances, limits, escalation |
+
+### Day to day
+
+- **Excel only:** run `Run daily check (Excel only).command` (or `recon.py`) each morning after exporting the open-PO list.
+- **Browser app (optional):** `Start Confirmation Desk.command` / `.bat`. Drag in PDFs, approve part numbers in one click, see scans next to what was read, download the workbook. Both share one memory file, so they always agree.
 
 | Situation | What the tool does |
 |---|---|
-| Same PDF sent twice | Recognised by its content and ignored |
-| You mark an item Done | Stays done tomorrow, with your note |
-| Vendor sends a corrected acknowledgment | The item closes by itself, with the reason |
-| A new problem appears on a line you'd closed | Reopens it and says why |
-| Vendor keeps moving its promise date | The **first** promise is never overwritten, so the history stays honest |
-| You approve a vendor part number once | It matches automatically from then on and joins the part-number master |
-
-The `TestDayTwo` test runs exactly this sequence: day 1 on the real files, Lisa's edits in Excel, and a revised vendor PDF on day 2.
+| Same PDF sent twice | recognised by content and ignored |
+| Lisa marks an item Done | stays done tomorrow, with her note |
+| Vendor sends a corrected acknowledgment | the item closes by itself, with the reason |
+| Vendor keeps moving its date | the **first** promise is kept, so the history stays honest |
+| Lisa approves a vendor part number | it matches automatically from then on |
 
 ---
 
-## 3. How it works
+## 3. Task 2 · Vendor performance readout
+
+The ERP extract was undocumented, so nothing was assumed from column names: the schema was profiled, joins were validated on samples, and every metric states its numerator, denominator and exclusions (*Definitions* tab).
+
+**Headline:** call **Continental Quality Heat Treat** first. It was on time on 42% of 134 due lines (other vendors: 69–99%), accounts for 61 of the 63 lines that arrived more than 7 days late, promises after our need date on 91% of lines, and is not improving. Part of it is Beacon's: we plan 19 days for heat treat, Continental quotes 28 and delivers in about 25. **Apex** is the second call: commercial, not delivery. It is 85% of received value, CRES bar has been confirmed 1–2% above PO since February, and $77k of short-shipped balances are still open.
+
+**Looking ahead** (`forward_risk.py`): 80 open lines ($3.32M) are due in the next 60 days.
+- **3** are at high risk of arriving late.
+- **26 lines ($1.84M)** due within 14 days have no acknowledgment on file.
+- The flag rule, backtested on 8 months without look-ahead, would have flagged **59 of the 63** lines that arrived more than 7 days late. Roughly 1 in 3 flagged lines was late, so it is a watch list, not a forecast.
+
+**Why no 0–100 vendor score:** the weights would be invented. Apex looks "worst" on late dollars only because it is 85% of spend; its late lines are late by a median of 1 day. The readout shows absolute and relative measures side by side, with denominators, and ranks the call by severity and business impact.
+
+**Data traps found and handled** (each re-derived independently):
+- receipt dates are `MM/DD/YYYY` text, so SQLite date functions return NULL;
+- 50 keyed-in-error reversal pairs, plus 1 duplicate that was never reversed;
+- `po_line.qty_received` is wrong on 169 lines;
+- 30 confirmations were superseded;
+- the confirmation feed stops on 2026-04-03;
+- Ostmark's PO prices are already USD (converting again would add $76k);
+- `qc_hold` dates are unreliable.
+
+Taken at face value, received value would be misstated by between +$1.3M and −$2.9M. The corrected figure is **$28,187,145.87**.
+
+**Refresh monthly:** `python3 build_readout.py --erp <new extract> --out <folder>`. If Task 1 has run, its extracted promise dates feed the forward view automatically.
+
+---
+
+## 4. Part numbers and vendor forms: build for the cleanup
+
+Vendor part numbers are a **master-data problem**, not an OCR problem. The crosswalk (`pn_crosswalk.csv` → `output/pn_crosswalk_updated.csv`) is keyed on **(vendor, vendor part no.)**, never the part number alone: `K-1050` means two different parts at two vendors. Each row keeps its source (ERP history, inferred this week, vendor-declared, buyer-approved), confidence, times seen, first and last seen, review status, reviewer and date. New mappings are only ever **proposed**: a buyer approves them, and only approved rows are used for matching. Two vendor renumberings were caught this week against ERP history.
+
+`vendor_forms.py` stops discrepancies at the source, using plain Excel because vendors already work by email:
+- **PO acknowledgment form** (one per open PO, sent with it):
+  - Our lines are locked, and rows can't be deleted.
+  - Every line needs *Accept as ordered*, *Accept with changes* or *Cannot supply*.
+  - Excel accepts only a real delivery date, and a change to qty or price needs a reason code.
+  - A returned form loads into the daily check at HIGH confidence, with no OCR.
+- **Supplier information pack** (once per vendor, pre-filled from the ERP):
+  - The vendor confirms its part numbers (they go to review), standard lead times, contacts, acknowledgment turnaround and certification expiry.
+  - The returned pack is validated, and a reply email lists what is missing.
+  - A lead-time gap report tells planning where MRP is wrong.
+
+`output/vendor_forms/SYNTHETIC_vendor_replies/` holds two **made-up** replies for demos (not case data).
+
+---
+
+## 5. Before trusting it in production
+
+1. **Shadow week:** Lisa keeps her manual check; the tool runs alongside. Count misses (target: zero) and false alarms, and tune the tolerances with her.
+2. **Coverage report:** the Run Summary shows per-run counts of text / OCR / unreadable documents, and the checks `every PDF has a status` and `every open PO line is accounted for` must say `PASS`.
+3. **Spot-check the Review Required tab** and every OCR'd document against the PDF image. The browser app shows them side by side.
+4. **Adding a vendor layout:** one ~20-line parse function in `parsers.py`, registered in `TEMPLATES`, plus a test in `tests/test_recon.py`. Until then that vendor's PDFs are flagged, never skipped. (Or send them the acknowledgment form.)
+
+## 6. Deliberately not built
+
+- ERP write-back.
+- Automatic vendor emails (drafts only).
+- LLM-first extraction.
+- A master-data platform.
+- A generic chatbot.
+- A vendor portal.
+- Cloud hosting.
+- Causal claims from 8 months of data.
+
+**AI:** `ai_reader.py` can read an unknown layout with Claude into a strict JSON schema, validated by the same rules. It is **off** unless `BEACON_AI_FALLBACK=1` and `ANTHROPIC_API_KEY` are set, because aerospace paperwork can be export-controlled and all 35 PDFs parse deterministically. It was not used to produce any output here.
+
+## 7. Known limitations
+
+- **Unknown layouts:** a new vendor layout is unreadable until a parser is added.
+- **OCR:** can misread digits; every scan goes to review.
+- **Stale export:** an out-of-date open-PO export causes false "dropped" or "not open" flags.
+- **Received value:** priced at PO price, not invoiced cost; there is no AP data in the extract.
+- **Promise metrics:** stop at 2026-04-03, where the ERP confirmation feed ends.
+- **Quality ranking:** not possible, because QC hold dates are unreliable.
+- **Production impact:** there is no production data, so the readout can rank exposure but can't prove cost.
+
+## 8. Layout
 
 ```
-PDF ──► parsers.py (one parser per vendor layout; OCR for scans; optional AI for unknown layouts)
-          │  normalized: vendor, PO, lines (part, qty, price, currency, promise date)
-          ▼
-recon.py  match each document line to a PO line:
-          L1 Beacon part no. on the document ► L2 approved vendor-PN crosswalk ► L3 description
-          ► L4 qty+price (MEDIUM confidence, goes to review) ► L5 unmatched (never guessed)
-          then check: missing line · qty · price (EUR converted at the ERP rate, 1% tolerance)
-          · date vs need · date sanity · revisions / split confirmations / duplicates
-          ▼
-workflow.py  daily check: update memory (store.py, one SQLite file) - to-do items,
-             promise history, part-number decisions
-          ▼
-report.py (Excel)    desk_app.py (Streamlit)    ◄── same engine, two front doors
+run_all.sh / run_all.bat     one-command run for graders
+task1_confirmation_recon/    parsers · recon · workflow · store · report · vendor_forms · desk_app · ai_reader · tests/ · launchers
+task2_vendor_readout/        analysis (cleaning + metrics) · forward_risk (watch list + backtest) · build_readout (xlsx/html/pdf) · tests/
+output/                      generated from the case data
+presentation/                deck (build_deck.js regenerates it) and screenshots
 ```
-
-**Deliberately deterministic.** All 35 PDFs parse with template rules, so every number is traceable to a line of text, the run costs nothing, and nothing leaves the building. The AI reader (`ai_reader.py`, Claude with schema-validated output) is only a fallback for layouts nobody has written a parser for. It is **off** unless IT sets `BEACON_AI_FALLBACK=1`, because aerospace paperwork can be export-controlled. Whatever it reads always goes to *Needs your OK*.
-
-**Adding a vendor layout** means writing one ~20-line parse function in `parsers.py` and adding it to `TEMPLATES`. Until then, that vendor's PDFs are flagged "could not read" (or typed in via the form), never silently skipped.
-
-## 4. Past and future: using the ERP, and fixing discrepancies at the source
-
-Reading six PDF layouts better every year is the wrong long-term goal. The durable fix is for vendors to answer in Beacon's own format, with the answers checked as they type. `vendor_forms.py` does this with plain Excel files, because vendors already work by email and it needs no portal, hosting or logins.
-
-**The past (the ERP extract)** feeds everything below:
-
-| From 8 months of ERP history | Used for |
-|---|---|
-| Per vendor + part: POs, last price, planned / quoted / actual lead time (medians) | Pre-filling the supplier pack, and the lead-time gap report for planning |
-| Approved vendor part numbers (mined from confirmations) | Pre-filling "Your part no." so vendors confirm rather than type |
-| 40 PO lines past due with quantity still open ($128k, incl. Apex $77k) | New **Old Open Balances** sheet in Lisa's workbook and on *Chase & due soon*: chase or short-close |
-| Vendor on-time and promise-keeping history | Warnings next to today's promises (already in the desk) |
-
-**The future: two forms.**
-
-1. **PO acknowledgment form** (`output/vendor_forms/acknowledgment_forms/`, one per open PO; send it with the PO)
-   - Grey cells are our PO and are locked. Rows can't be deleted, so a line can't vanish silently.
-   - For every line the vendor chooses *Accept as ordered*, *Accept with changes* or *Cannot supply*, and gives **one real delivery date**. Excel refuses "KW 20-22" and "TBD".
-   - A qty or price change needs a reason code (material surcharge, capacity, partial now, …).
-   - Returned: drop it in the sidebar with the PDFs. It matches on Beacon part numbers at HIGH confidence, with no OCR.
-   - *Cannot supply* becomes **VENDOR_DECLINED_LINE** (act today, with the vendor's reason) instead of "possible dropped line". A blank or invalid answer becomes **FORM_INCOMPLETE**, and the draft email asks for exactly that line back.
-2. **Supplier information pack** (`output/vendor_forms/supplier_packs/`, once per vendor; refresh yearly)
-   - Pre-filled with every part we have bought from that vendor, and our record of planned / quoted / actual lead time.
-   - The vendor confirms its own part numbers, standard lead times, MOQ, price basis, surcharges, acknowledgment contact and turnaround, and certifications (AS9100 / Nadcap) with expiry dates.
-   - Returned (*Vendor forms* page): the file is validated, and a reply email lists what is missing.
-     - Declared part numbers go to *Needs your OK*, never straight to APPROVED. A part number given for two different parts is refused, and a renumbering is flagged against ERP history.
-     - A **lead-time gap** report tells planning where MRP is wrong. Continental's standard is 28 days; we plan 19.
-
-```bash
-cd task1_confirmation_recon
-python3 vendor_forms.py ack     --pos /data/open_pos.csv --vendors /data/vendor_master.csv --erp /data/beacon_erp.db --out ../output/vendor_forms/acknowledgment_forms
-python3 vendor_forms.py onboard --pos /data/open_pos.csv --vendors /data/vendor_master.csv --erp /data/beacon_erp.db --out ../output/vendor_forms/supplier_packs
-python3 vendor_forms.py check   ../output/vendor_forms/SYNTHETIC_vendor_replies/SYNTHETIC_Continental_supplier_pack.xlsx
-```
-
-`output/vendor_forms/SYNTHETIC_vendor_replies/` holds two **made-up** vendor replies for demos: Ostmark declining a line, and Continental returning its pack. They are not case data. Dropping the Ostmark one into the desk shows a *Vendor declined line* item.
-
-**Rollout, and why not a portal yet:** start with the vendors that cause the most reading work (Continental's scans, Ostmark's German week ranges, Heritage's part numbers). PDFs keep working for everyone else, so it is not a big-bang change. Once most vendors use the form, the same fields become a small web form or an EDI 855 feed with no change to the engine.
-
-## 5. What the tool found this week (35 PDFs, 44 open PO lines)
-
-| | |
-|---|---|
-| Act today | Apex **dropped PO-4500050001 line 2** (1,500 pcs A286 bar, ≈$7.1k). Apex also sent a confirmation for **PO-4500060619**, which is not a Beacon PO. |
-| This week | A 75-pc short (PO-007) · a +2.3% price increase (PO-002) · promises 21 / 16 / 14 / 7 days late (Continental, Ostmark, Heritage, Liberty split) · Liberty acknowledged PO-019 with no qty or date |
-| Check | Revised QuickShip email (the original is superseded) · QuickShip sent an **invoice** in place of an acknowledgment · Continental promise dates earlier than the confirmation itself · documents dated before their PO · 2 renumbered vendor part numbers |
-| Clean | 22 lines |
-
-## 6. Vendor readout: headline
-
-**Call Continental Quality Heat Treat first.**
-- It is on time on 42% of lines; the other vendors range from 69% to 99%.
-- Of all lines that arrived more than 7 days late, 61 of 63 are Continental's.
-- It promises a date after our need date on 91% of lines.
-- It has not improved over the eight months.
-- Part of the problem is ours: our planned heat-treat lead time is 19 days, Continental quotes 28 and delivers in about 25.
-
-Apex is second, for commercial reasons rather than delivery: 85% of spend, CRES bar prices up 1–2% since February on every confirmation while every PO stayed at $3.92, and $77k of short-shipped balances left open.
-
-The ERP extract has traps that change the answer. Each was independently re-derived before use. They are listed in the readout and in the workbook's *Data Quality* tab.
-
-## 7. Layout
-
-```
-task1_confirmation_recon/   parsers, recon, workflow, store, report, desk_app, ai_reader, vendor_forms, tests/, launchers
-task2_vendor_readout/       analysis.py (metrics + data-trap handling), build_readout.py (workbook + HTML)
-output/                     generated from the case data (+ output/vendor_forms/: forms to send vendors)
-presentation/               deck + speaker notes
-```
-
-The case inputs (PDFs, CSVs, ERP extract) are in `../Beacon Superday-Candidate/data/` in this repository. The tests find them there, or set `BEACON_DATA`.

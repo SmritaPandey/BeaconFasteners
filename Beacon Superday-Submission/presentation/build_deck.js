@@ -7,7 +7,7 @@ const pptxgen = require("pptxgenjs");
 
 const pres = new pptxgen();
 pres.layout = "LAYOUT_WIDE"; // 13.333 x 7.5 in
-pres.title = "Beacon Fasteners - Confirmation Desk & Vendor Readout";
+pres.title = "Beacon PO Confirmation Control Tower";
 
 const C = {
   ink: "1F2A33", slate: "4E5D6A", muted: "7D8B97", tint: "EEF2F5", line: "D5DCE2", white: "FFFFFF",
@@ -58,63 +58,86 @@ function table(s, header, rows, opts) {
   s.addTable([hdr, ...body], { fontFace: BODY, fontSize: opts.size || 11, color: C.ink, border: { type: "solid", pt: 0.5, color: C.line }, valign: "middle", margin: 0.05, autoPage: false, ...opts.t });
 }
 
-// ------------------------------------------------------------------ 1 title
+// ------------------------------------------------------------------ title
 {
   const s = base(null, null, true);
-  s.addText("TINICUM · FDE SUPER-DAY CASE", { x: M, y: 1.4, w: 9, h: 0.35, fontFace: BODY, fontSize: 13, bold: true, color: C.accent, charSpacing: 3, margin: 0, isTextBox: true });
-  s.addText("Beacon Fasteners", { x: M, y: 1.9, w: 12, h: 1.0, fontFace: HEAD, fontSize: 48, bold: true, color: C.white, margin: 0, isTextBox: true });
-  s.addText("A confirmation desk for Lisa, and a vendor readout for the plant manager", { x: M, y: 2.95, w: 11, h: 0.6, fontFace: HEAD, fontSize: 24, color: "CFD8DF", margin: 0, isTextBox: true });
-  const items = [["Task 1", "Confirmation Desk: vendor PDFs checked against open POs, worst-first to-do list in Excel"],
-    ["Task 2", "Vendor readout: 8 months of ERP history, received value, vendor comparison, who to call first"],
-    ["Next", "Vendor forms: Beacon's own acknowledgment form and supplier pack, pre-filled from the ERP"]];
-  items.forEach(([k, v], i) => {
-    s.addText(k, { x: M, y: 4.3 + i * 0.55, w: 1.2, h: 0.4, fontFace: BODY, fontSize: 15, bold: true, color: C.accent, margin: 0, isTextBox: true });
-    s.addText(v, { x: M + 1.2, y: 4.3 + i * 0.55, w: 10.5, h: 0.4, fontFace: BODY, fontSize: 15, color: C.white, margin: 0, isTextBox: true });
+  // motif: a short "queue" of rounded bars, the worst item highlighted
+  [0, 1, 2, 3, 4].forEach((i) => {
+    s.addShape(pres.shapes.ROUNDED_RECTANGLE, { x: 9.35, y: 1.35 + i * 0.62, w: 3.35 - i * 0.28, h: 0.42, rectRadius: 0.08,
+      fill: { color: i === 0 ? C.accent : "2C3A46" }, line: { color: i === 0 ? C.accent : "2C3A46" } });
   });
-  s.addText("Smrita Pandey  ·  \"Useful beats impressive.\"", { x: M, y: 6.3, w: 9, h: 0.4, fontFace: BODY, fontSize: 14, italic: true, color: "9AA7B2", margin: 0, isTextBox: true });
-  s.addNotes("30 minutes: ~12 on Task 1, ~10 on Task 2, ~8 on limits, questions and data I wish I had. Everything shown runs from one command on the case data; every number came out of the tools, not typed in.");
+  s.addText("TINICUM · FDE SUPER-DAY CASE", { x: M, y: 1.35, w: 8, h: 0.35, fontFace: BODY, fontSize: 13, bold: true, color: C.accent, charSpacing: 3, margin: 0, isTextBox: true });
+  s.addText("Beacon PO Confirmation\nControl Tower", { x: M, y: 1.85, w: 8.6, h: 1.6, fontFace: HEAD, fontSize: 36, bold: true, color: C.white, margin: 0, valign: "top", isTextBox: true });
+  s.addText("A daily buyer worklist, and an evidence-led view of supplier risk", { x: M, y: 3.7, w: 8.4, h: 0.5, fontFace: HEAD, fontSize: 20, italic: true, color: "CFD8DF", margin: 0, isTextBox: true });
+  const items = [["For Lisa", "35 vendor PDFs in, one worst-first action queue out, in Excel"],
+    ["For the plant manager", "8 months of ERP history: who to call first, and which open orders to watch"],
+    ["For Beacon", "Vendor forms and a part-number crosswalk that stop the mess at the source"]];
+  items.forEach(([k, v], i) => {
+    s.addText(k, { x: M, y: 4.75 + i * 0.5, w: 2.4, h: 0.4, fontFace: BODY, fontSize: 14, bold: true, color: C.accent, margin: 0, isTextBox: true });
+    s.addText(v, { x: M + 2.4, y: 4.75 + i * 0.5, w: 9.5, h: 0.4, fontFace: BODY, fontSize: 14, color: C.white, margin: 0, isTextBox: true });
+  });
+  s.addText("Smrita Pandey", { x: M, y: 6.55, w: 6, h: 0.35, fontFace: BODY, fontSize: 13, color: "9AA7B2", margin: 0, isTextBox: true });
+  s.addNotes("One line: I turned an unstructured confirmation process into a controlled daily workflow, and eight months of ERP data into a supplier decision. ~22 minutes of talk: 3 on the problem, 9 on Task 1, 7 on Task 2, 3 on limits and questions, then Q&A. Every number shown came out of the tools on the case data.");
 }
 
-// ------------------------------------------------------------------ 2 exec summary
+// ------------------------------------------------------------------ exec
 {
-  const s = base("Executive summary", "Two tools: exceptions for Lisa, evidence for the plant manager");
+  const s = base("Executive summary", "What Lisa acts on today, and who the plant calls first");
   const colW = (W - 2 * M - 0.4) / 2;
-  [[M, "LISA · TASK 1", "Confirmation Desk"], [M + colW + 0.4, "PLANT MANAGER · TASK 2", "Vendor performance readout"]].forEach(([x, k, t]) => {
+  [[M, "LISA · TASK 1", "PO Confirmation Control Tower"], [M + colW + 0.4, "PLANT MANAGER · TASK 2", "Vendor performance readout"]].forEach(([x, k, t]) => {
     card(s, x, 1.65, colW, 5.2);
     s.addText(k, { x: x + 0.3, y: 1.85, w: colW - 0.6, h: 0.3, fontFace: BODY, fontSize: 11, bold: true, color: C.accent, charSpacing: 2, margin: 0, isTextBox: true });
     s.addText(t, { x: x + 0.3, y: 2.15, w: colW - 0.6, h: 0.45, fontFace: HEAD, fontSize: 20, bold: true, color: C.ink, margin: 0, isTextBox: true });
   });
   const x1 = M + 0.3, x2 = M + colW + 0.7, sw = (colW - 0.6) / 3;
-  stat(s, x1, 2.8, sw, "35", "vendor PDFs read (4 scans by OCR, 4 German)", C.ink, 26);
-  stat(s, x1 + sw, 2.8, sw, "22/44", "open PO lines clean: no action needed", C.green, 26);
+  stat(s, x1, 2.8, sw, "84%", "of 44 lines auto-matched at high confidence", C.ink, 26);
+  stat(s, x1 + sw, 2.8, sw, "22", "lines fully clean: Lisa never looks at them", C.green, 26);
   stat(s, x1 + 2 * sw, 2.8, sw, "2", "items to act on today", C.red, 26);
   bullets(s, [
     ["Silently dropped line: ", "Apex left PO-4500050001 line 2 (1,500 pcs) off its acknowledgment."],
     ["Stray PO: ", "a confirmation arrived for PO-4500060619, which is not an open Beacon PO."],
-    ["Remembers: ", "handled items stay handled, the first promise date is never overwritten."],
-    ["Fixes it at the source: ", "Beacon's own acknowledgment form and supplier pack, pre-filled from the ERP."],
+    ["Auditable: ", "every row traces to a source file and match method; uncertain matches go to review, never auto-accepted."],
   ], { x: x1, y: 4.25, w: colW - 0.6, h: 2.4, fontSize: 13 });
-  stat(s, x2, 2.8, sw, "$28.2M", "received Sep 2025 to May 2026 (after cleaning)", C.ink, 26);
-  stat(s, x2 + sw, 2.8, sw, "42%", "Continental on time; other vendors 69-99%", C.red, 26);
-  stat(s, x2 + 2 * sw, 2.8, sw, "61/63", "of the lines >7 days late are Continental's", C.red, 26);
+  stat(s, x2, 2.8, sw, "42%", "Continental on time; other vendors 69-99%", C.red, 26);
+  stat(s, x2 + sw, 2.8, sw, "61/63", "of the lines >7 days late are Continental's", C.red, 26);
+  stat(s, x2 + 2 * sw, 2.8, sw, "$1.84M", "due in 14 days, not acknowledged", C.amber, 26);
   bullets(s, [
-    ["Call first: Continental Quality Heat Treat. ", "Late most often and by the most, and not improving. Part of it is our 19-day planned lead time vs their 28-day quote."],
-    ["Call second: Apex, commercially. ", "85% of spend; CRES bar confirmed 1-2% over PO since Feb; $77k of short-shipped balances left open."],
+    ["Call Continental first. ", "Late most often, by the most, not improving; part of it is our 19-day plan vs their 28-day quote."],
+    ["Call Apex second, commercially. ", "85% of spend; CRES bar 1-2% over PO since Feb; $77k short-shipped balances open."],
+    ["Looking ahead: ", "a backtested watch list for the next 60 days of open orders."],
   ], { x: x2, y: 4.25, w: colW - 0.6, h: 2.4, fontSize: 13 });
-  s.addNotes("If you remember one thing per task: Task 1 turns 35 PDFs into 23 things to do, worst first, and 22 lines Lisa never has to look at. Task 2 says call Continental first, with the numbers behind it, and says honestly that part of the problem is our own planning lead time.");
+  s.addNotes("Task 1 turns 35 PDFs into 23 things to do, worst first, and 22 lines Lisa never has to look at. Task 2 says call Continental first, with the numbers, and says honestly that part of it is our own planning. The forward view turns history into something planning can act on next week.");
 }
 
-// ------------------------------------------------------------------ 3 problem framing
+// ------------------------------------------------------------------ heard
 {
-  const s = base("Problem framing", "Two users, two decisions, and what a miss costs each");
-  table(s, ["", "Lisa, senior buyer", "Plant manager"], [
-    [{ text: "Decision", options: { bold: true } }, "Is every line I ordered confirmed at my qty, price and date? If not, who do I chase today?", "Which vendor deserves my attention first, and what do I say to them?"],
-    [{ text: "Today", options: { bold: true } }, "~90 min/day reading ~35 PDFs (clean ERP output, scans, German, vendor part numbers) against ~50 open POs", "8 months of ERP history nobody has analysed; vendor decisions run on anecdote"],
-    [{ text: "Hardest part", options: { bold: true } }, "Noticing what is NOT on the page: a silently dropped line", "The ERP data looks clean but isn't (8 traps, next section)"],
-    [{ text: "Cost of a miss", options: { bold: true } }, "Receiving shorts, AP price disputes, customer expedites", "The wrong vendor gets the call; the real cause (sometimes ours) stays hidden"],
-    [{ text: "What I built", options: { bold: true, color: C.accent } }, { text: "A daily check that produces a worst-first exception list in Excel, with memory", options: { bold: true } }, { text: "A one-page readout plus a workbook with every definition, numerator and denominator", options: { bold: true } }],
-  ], { t: { x: M, y: 1.7, w: W - 2 * M, colW: [1.9, 5.07, 5.16], rowH: 0.78 }, size: 14, hsize: 14 });
-  s.addText("Design test for both: could the user act on it tomorrow morning without me in the room?", { x: M, y: 6.35, w: W - 2 * M, h: 0.4, fontFace: HEAD, fontSize: 16, italic: true, color: C.slate, margin: 0, isTextBox: true });
+  const s = base("What I heard", "Three decisions behind the case, and what I built for each");
+  const cols = [
+    ["Lisa, senior buyer", "\"Which PO lines need me today, and what do I do?\"",
+     "~90 min a day reading ~35 PDFs against ~50 open POs: clean ERP output, scans, one German, one vendor with its own part numbers.",
+     "Misses become receiving shorts, AP fights and customer expedites. The hardest one is a line that is simply not there.",
+     "A worst-first action queue in Excel, with memory"],
+    ["Plant manager", "\"Which supplier do I call first, and why?\"",
+     "8 months of ERP history nobody has analysed; vendor decisions run on anecdote.",
+     "The wrong vendor gets the call, and a cause that is partly ours (planning lead times) stays hidden.",
+     "A readout with one answer, the evidence and the denominators"],
+    ["Beacon", "\"How do we stop this recurring?\"",
+     "Every vendor sends its own layout and part numbers; nothing is captured in a structured way.",
+     "The same reconciliation is repeated every day, and the part-number mess grows.",
+     "Vendor forms plus a governed part-number crosswalk"],
+  ];
+  const cw = (W - 2 * M - 0.6) / 3;
+  cols.forEach(([who, q, today, cost, built], i) => {
+    const x = M + i * (cw + 0.3);
+    card(s, x, 1.6, cw, 5.25);
+    s.addText(who.toUpperCase(), { x: x + 0.25, y: 1.75, w: cw - 0.5, h: 0.3, fontFace: BODY, fontSize: 11, bold: true, color: C.accent, charSpacing: 2, margin: 0, isTextBox: true });
+    s.addText(q, { x: x + 0.25, y: 2.08, w: cw - 0.5, h: 0.85, fontFace: HEAD, fontSize: 16, bold: true, color: C.ink, margin: 0, valign: "top", isTextBox: true });
+    s.addText([{ text: "Today  ", options: { bold: true, color: C.muted } }, { text: today, options: {} }], { x: x + 0.25, y: 3.0, w: cw - 0.5, h: 1.2, fontFace: BODY, fontSize: 12.5, color: C.ink, margin: 0, valign: "top", isTextBox: true });
+    s.addText([{ text: "Cost of a miss  ", options: { bold: true, color: C.muted } }, { text: cost, options: {} }], { x: x + 0.25, y: 4.25, w: cw - 0.5, h: 1.15, fontFace: BODY, fontSize: 12.5, color: C.ink, margin: 0, valign: "top", isTextBox: true });
+    s.addShape(pres.shapes.ROUNDED_RECTANGLE, { x: x + 0.2, y: 5.6, w: cw - 0.4, h: 1.0, rectRadius: 0.06, fill: { color: C.white }, line: { color: C.line } });
+    s.addText([{ text: "Built  ", options: { bold: true, color: C.accent } }, { text: built, options: { bold: true } }], { x: x + 0.35, y: 5.6, w: cw - 0.7, h: 1.0, fontFace: BODY, fontSize: 13, color: C.ink, margin: 0, valign: "middle", isTextBox: true });
+  });
+  s.addNotes("I didn't start by asking which technology to use. I started with the buyer's daily decision, the plant's risk, and the smallest reliable workflow that improves both. Design test for everything: could the user act on it tomorrow morning without me in the room?");
 }
 
 // ------------------------------------------------------------------ 3b approach / time split
@@ -142,9 +165,10 @@ function table(s, header, rows, opts) {
   s.addNotes("Say roughly how long each step took you. The point to land: the order was set by risk. Data traps or a broken dropped-line check would sink the work; a plainer UI would not. When something had to give, polish gave, not coverage.");
 }
 
+
 // ------------------------------------------------------------------ 4 product decision
 {
-  const s = base("Task 1 · Product decision", "An exception list Lisa opens in Excel, not a dashboard to learn");
+  const s = base("Task 1 · Design choices", "An exception list Lisa opens in Excel, not a dashboard to learn");
   const lw = 7.3;
   const rows = [
     ["1", "Excel workbook is the product", "Action List first, worst first: what happened and what to do, in words. Lisa types Yes in Done? and adds Notes; the next run reads them back."],
@@ -169,6 +193,7 @@ function table(s, header, rows, opts) {
   ], { x: rx + 0.3, y: 2.4, w: rw - 0.6, h: 4.2, fontSize: 14 });
   s.addNotes("Why Excel: Lisa already works from a PO list in Excel and Outlook. A new tool that needs a login and training won't get used. The app exists for the two things Excel is bad at: dragging PDFs in and one-click approval of part numbers. Both read and write the same memory file, so they always agree.");
 }
+
 
 // ------------------------------------------------------------------ 5 how it works
 {
@@ -200,6 +225,29 @@ function table(s, header, rows, opts) {
   s.addNotes("Tolerances were chosen from the data, not invented. USD prices: any change is flagged, because ERP prices are exact to 4 decimals. EUR prices: flagged over 1%, because month-to-month FX noise in the ERP rates is about 0.3%. On this data every L4 inference was an exact qty and price match, but it still goes to review because two lines could share both.");
 }
 
+
+// ------------------------------------------------------------------ workbook
+{
+  const s = base("Task 1 · Lisa's workbook", "Lisa's 7am view: exceptions only, worst first, next step");
+  const iw = 8.3, ih = iw * 433 / 1041;
+  s.addImage({ path: A("workbook_action_list.png"), x: M, y: 1.65, w: iw, h: ih, shadow: { type: "outer", blur: 6, offset: 2, angle: 90, color: "000000", opacity: 0.25 } });
+  s.addText("Action List tab, real output on this week's 35 PDFs (first columns shown).", { x: M, y: 1.75 + ih, w: iw, h: 0.3, fontFace: BODY, fontSize: 11, italic: true, color: C.muted, margin: 0, isTextBox: true });
+  bullets(s, [
+    ["Done? and Notes ", "are read back on the next run: handled items stay handled."],
+    ["Draft Emails: ", "one ready-to-edit email per vendor; the tool never sends."],
+    ["Read Me tab: ", "refresh steps, rules, tolerances, escalation."],
+  ], { x: M, y: 2.25 + ih, w: iw, h: 1.6, fontSize: 13 });
+  const rx = M + iw + 0.35, rw = W - M - rx;
+  card(s, rx, 1.65, rw, 5.2);
+  s.addText("One tab per job", { x: rx + 0.25, y: 1.8, w: rw - 0.5, h: 0.4, fontFace: HEAD, fontSize: 16, bold: true, color: C.ink, margin: 0, isTextBox: true });
+  const tabs = [["Buyer", "Action List · Dropped & Unconfirmed · Draft Emails"], ["AP", "Price Variances"], ["Planner", "Date Variances"],
+    ["Receiving", "Quantity Variances"], ["Master data", "Unmatched Vendor Lines · PN Crosswalk"],
+    ["Audit", "All PO Lines · Documents · Review Required · Run Summary"], ["From the ERP", "Old Open Balances ($128k to chase or close)"]];
+  s.addText(tabs.map(([k, v], i) => [{ text: k + "\n", options: { bold: true, color: C.accent, fontSize: 11 } }, { text: v, options: { breakLine: i < tabs.length - 1, fontSize: 12 } }]).flat(),
+    { x: rx + 0.25, y: 2.3, w: rw - 0.5, h: 4.4, fontFace: BODY, color: C.ink, paraSpaceAfter: 5, valign: "top", margin: 0, isTextBox: true });
+  s.addNotes("Why Excel: it is where Lisa already works, it needs no login or training, and her edits flow back into the tool. The small browser app is optional, for drag-and-drop and one-click approvals; it shares the same memory.");
+}
+
 // ------------------------------------------------------------------ 6 what it caught
 {
   const s = base("Task 1 · Run on this week's 35 PDFs (as of 05/17/2026)", "23 things to do, worst first, and 22 lines Lisa can skip");
@@ -223,40 +271,6 @@ function table(s, header, rows, opts) {
   stat(s, rx + 0.25, 4.1, rw - 0.5, "11", "items on Review Required (incl. OCR'd scans)", C.amber, 28);
   s.addText("Built-in checks, every run:\n✓ every PDF has a status\n✓ every open PO line accounted for\n✓ revision superseded original (QuickShip)", { x: rx + 0.25, y: 5.5, w: rw - 0.5, h: 1.15, fontFace: BODY, fontSize: 11, color: C.slate, margin: 0, valign: "top", isTextBox: true });
   s.addNotes("The dropped line is the headline: it's the thing Lisa said matters most and the hardest to see, because it's an absence. The tool knows it's missing because it starts from the open PO list, not from the PDF. The stray PO shows the same idea in reverse. 13 'check' items are mostly date sanity: acknowledgments dated before the PO, or Continental promise dates before the confirmation date.");
-}
-
-// ------------------------------------------------------------------ 7 screenshots
-{
-  const s = base("Task 1 · What Lisa sees", "Today's list, plus the things the tool is not sure about");
-  const h1 = 5.25, w1 = h1 * 1630 / 1240;
-  s.addImage({ path: A("today_c.png"), x: M, y: 1.6, w: w1, h: h1, shadow: { type: "outer", blur: 6, offset: 2, angle: 90, color: "000000", opacity: 0.25 } });
-  const rx = M + w1 + 0.4, rw = W - M - rx, h2 = rw * 740 / 1630;
-  s.addImage({ path: A("review_c.png"), x: rx, y: 1.6, w: rw, h: h2, shadow: { type: "outer", blur: 6, offset: 2, angle: 90, color: "000000", opacity: 0.25 } });
-  s.addText("Needs your OK: the vendor renamed a part. The tool shows why it thinks so and what our history calls it. One click approves it for good.", { x: rx, y: 1.7 + h2, w: rw, h: 1.0, fontFace: BODY, fontSize: 12, color: C.slate, margin: 0, valign: "top", isTextBox: true });
-  const h3 = rw * 530 / 1630;
-  s.addImage({ path: A("review_ocr_c.png"), x: rx, y: 2.9 + h2, w: rw, h: h3, shadow: { type: "outer", blur: 6, offset: 2, angle: 90, color: "000000", opacity: 0.25 } });
-  s.addText("Scans are shown next to what OCR read, so checking takes seconds, not retyping.", { x: rx, y: 3.0 + h2 + h3, w: rw, h: 0.6, fontFace: BODY, fontSize: 12, color: C.slate, margin: 0, valign: "top", isTextBox: true });
-  s.addNotes("Live demo here if time allows: open the app, click 'Load this week's sample confirmations', tick one Done, approve one part number, then Download Excel and show the same state in the workbook.");
-}
-
-// ------------------------------------------------------------------ 8 memory
-{
-  const s = base("Task 1 · The past and future problem", "A desk that remembers: tomorrow's list shows only what's new");
-  table(s, ["Situation", "What the tool does"], [
-    ["Same PDF emailed twice", "Recognised by its content hash and ignored"],
-    ["Lisa marks an item Done", "Stays done tomorrow, with her note"],
-    ["Vendor sends a corrected acknowledgment", "The open item closes by itself, with the reason"],
-    ["A new problem appears on a line she had closed", "Reopens it and says why"],
-    ["Vendor keeps moving the promise date", "The FIRST promise is never overwritten, so the history stays honest"],
-    ["Lisa approves a vendor part number once", "Matches automatically from then on and joins the part-number crosswalk"],
-  ], { t: { x: M, y: 1.7, w: 7.9, colW: [3.4, 4.5], rowH: 0.62 }, size: 13, hsize: 13 });
-  const rx = M + 8.3, rw = W - M - rx;
-  card(s, rx, 1.7, rw, 4.95);
-  s.addText("Why keep the first promise", { x: rx + 0.3, y: 1.9, w: rw - 0.6, h: 0.4, fontFace: HEAD, fontSize: 17, bold: true, color: C.ink, margin: 0, isTextBox: true });
-  s.addText("If every revised date overwrites the last one, every PO ends up looking on time and vendor performance can't be measured. The same trap is in the ERP: 30 confirmations were superseded.", { x: rx + 0.3, y: 2.75, w: rw - 0.6, h: 1.4, fontFace: BODY, fontSize: 13, color: C.slate, margin: 0, valign: "top", isTextBox: true });
-  s.addText("Tested", { x: rx + 0.3, y: 4.2, w: rw - 0.6, h: 0.35, fontFace: HEAD, fontSize: 17, bold: true, color: C.ink, margin: 0, isTextBox: true });
-  s.addText("59 automated tests. TestDayTwo runs day 1 on the real PDFs, applies Lisa's Excel edits, then feeds a revised vendor PDF on day 2 and checks each row above.", { x: rx + 0.3, y: 4.6, w: rw - 0.6, h: 1.9, fontFace: BODY, fontSize: 13, color: C.slate, margin: 0, valign: "top", isTextBox: true });
-  s.addNotes("This is the answer to 'is it a one-time script?'. The store is one SQLite file: items, notes, append-only promise history, crosswalk approvals and file hashes. The Excel and the app read and write the same store.");
 }
 
 
@@ -295,9 +309,10 @@ function table(s, header, rows, opts) {
   s.addNotes("This is the answer to past vs future. The past: the ERP tells us every part each vendor supplies, what we paid, and the real lead times; it pre-fills both forms and gives Lisa a list of $128k of old open balances to chase or short-close. The future: the vendor answers in our format, so the three hardest problems (dropped lines, week-range dates, vendor part numbers) are prevented rather than detected. Roll out to the three vendors that cost the most reading time first: Continental's scans, Ostmark's German week ranges, Heritage's part numbers.");
 }
 
+
 // ------------------------------------------------------------------ 9 data traps
 {
-  const s = base("Task 2 · Data before metrics", "The ERP extract looks clean but isn't: 8 traps found first");
+  const s = base("Task 2 · Method", "Undocumented ERP: profiled first, 8 traps found");
   bullets(s, [
     ["Receipt dates are MM/DD/YYYY text: ", "SQLite date() returns NULL on every row."],
     ["50 reversal pairs ", "(keyed in error, then reversed) plus 1 unreversed duplicate (txn 701546)."],
@@ -318,6 +333,7 @@ function table(s, header, rows, opts) {
   s.addText("The naive answers are wrong by +$1.3M and -$2.9M. Every number in the readout says which records it counts (Definitions tab).", { x: M + 6.9, y: 6.0, w: W - 2 * M - 6.9, h: 0.8, fontFace: BODY, fontSize: 13, italic: true, color: C.slate, margin: 0, isTextBox: true });
   s.addNotes("Each trap was verified independently. The date format one is sneaky: a SQL-only analysis silently returns nothing by month. Received value = net receipt qty times PO unit price. Receipts carry no price, so this is value at PO price, not invoiced cost; I say that on the readout.");
 }
+
 
 // ------------------------------------------------------------------ 10 monthly value
 {
@@ -343,6 +359,7 @@ function table(s, header, rows, opts) {
   s.addText("* Sep and May are partial months. Reversals netted, 1 duplicate excluded.", { x: rx, y: 5.9, w: rw, h: 0.6, fontFace: BODY, fontSize: 11, color: C.muted, margin: 0, isTextBox: true });
 }
 
+
 // ------------------------------------------------------------------ 11 vendor comparison
 {
   const s = base("Task 2 · Vendor-by-vendor", "Continental stands out on delivery; Apex on dollars");
@@ -362,6 +379,7 @@ function table(s, header, rows, opts) {
   ], { x: M, y: 5.5, w: W - 2 * M, h: 1.2, fontFace: BODY, fontSize: 12, color: C.slate, margin: 0, valign: "top", isTextBox: true });
   s.addNotes("I deliberately did not build a 0-100 vendor score. Any weighting of lateness vs price vs shortage would be my opinion dressed up as math. Instead, the table shows absolute and relative numbers side by side, with the denominators.");
 }
+
 
 // ------------------------------------------------------------------ 12 call continental
 {
@@ -391,9 +409,178 @@ function table(s, header, rows, opts) {
   s.addNotes("Questions for the call: can you commit to a standard lead time we can load into MRP? When you confirm a date you meet it 58% of the time; what drives the misses: furnace capacity, batching, or late incoming parts from us? 51% of lines arrive split; can partial lots be avoided or flagged? Language is deliberate: highest observed delivery exposure, not 'caused production delays'. The ERP has no production-impact data.");
 }
 
+
+// ------------------------------------------------------------------ ahead
+{
+  const s = base("Task 2 · Looking ahead", "From rear-view to a watch list for open orders");
+  const sw = 2.35;
+  stat(s, M, 1.7, sw, "$3.32M", "80 open lines due in the next 60 days", C.ink, 32);
+  stat(s, M + sw, 1.7, sw, "$1.84M", "26 lines due in 14 days, no acknowledgment", C.amber, 32);
+  stat(s, M, 3.05, sw, "3", "lines at high risk (2 Continental, 1 Heritage)", C.red, 32);
+  stat(s, M + sw, 3.05, sw, "59 of 63", "past lines >7 days late the rule would have flagged", C.green, 32);
+  card(s, M, 4.45, 2 * sw - 0.2, 2.45);
+  s.addText("The rule (checkable by hand)", { x: M + 0.2, y: 4.55, w: 2 * sw - 0.6, h: 0.35, fontFace: HEAD, fontSize: 13, bold: true, color: C.ink, margin: 0, isTextBox: true });
+  bullets(s, [
+    "Flag if the vendor already promises after our need date, or delivers this part on time <60% (5+ past lines).",
+    "Backtested on 8 months, no look-ahead: 33% of flagged lines were late vs 22% overall. A watch list, not a forecast.",
+    "Promise dates come from the ERP and from this week's PDFs read by Task 1.",
+  ], { x: M + 0.2, y: 4.95, w: 2 * sw - 0.6, h: 1.9, fontSize: 11, paraSpaceAfter: 3 });
+  const rx = M + 2 * sw + 0.2, rw = W - M - rx, ih = rw * 914 / 960;
+  const h = Math.min(ih, 5.25), w = h * 960 / 914;
+  s.addImage({ path: A("readout_lookahead.png"), x: rx + (rw - w) / 2, y: 1.6, w, h, shadow: { type: "outer", blur: 6, offset: 2, angle: 90, color: "000000", opacity: 0.25 } });
+  s.addNotes("This is what turns a history lesson into something planning can act on next week. The biggest item is not a late vendor: it's $1.84M of Apex bar due in two weeks with no acknowledgment on file. Part of that may be the ERP confirmation feed stopping on 04/03, which is itself a question for IT. I backtested the rule before trusting it, and I say plainly that it's a watch list.");
+}
+
+// ------------------------------------------------------------------ 14 part-number cleanup
+{
+  const s = base("Task 2 · Toward the part-number cleanup", "The crosswalk grows from daily work and seeds the part master");
+  const pend = (t) => ({ text: t, options: { bold: true, color: C.amber } });
+  table(s, ["Vendor", "Vendor PN", "Beacon PN", "Source", "Status"], [
+    ["Heritage", "APH-441-OS", "CHB-9472-4", "This week's PDF (qty+price)", pend("PENDING: ERP had APH-4411")],
+    ["Ostmark", "OST-CAR-A-100", "TOOL-INS-CAR", "This week's PDF (qty+price)", pend("PENDING: ERP had WZ-HM-EIN")],
+    ["Heritage", "APH-125 / 318 / 441 / 4411", "CHB-3301 / 7715 / 9472-3 / 9472-4", "ERP confirmations × PO lines", "Seen 30-44 times each"],
+    ["Heritage", { text: "K-1050", options: { bold: true, color: C.red } }, "CHB-5520", "ERP confirmations × PO lines", "Seen 41 times"],
+    ["Ostmark", { text: "K-1050", options: { bold: true, color: C.red } }, "TOOL-PUNCH-STD", "ERP confirmations × PO lines", "Same PN, different part!"],
+    ["Ostmark", "WZ-9472-DS / WZ-HM-EIN", "TOOL-DIE-9472 / TOOL-INS-CAR", "ERP confirmations × PO lines", "Seen 17-20 times each"],
+  ], { t: { x: M, y: 1.65, w: 8.4, colW: [1.0, 2.0, 2.1, 1.75, 1.55], rowH: 0.55 }, size: 11 });
+  const rx = M + 8.8, rw = W - M - rx;
+  card(s, rx, 1.65, rw, 5.1);
+  s.addText("For the cleanup", { x: rx + 0.3, y: 1.85, w: rw - 0.6, h: 0.4, fontFace: HEAD, fontSize: 16, bold: true, color: C.ink, margin: 0, isTextBox: true });
+  bullets(s, [
+    ["Key on (vendor, vendor PN): ", "K-1050 is two different parts."],
+    ["Vendors renumber quietly: ", "2 caught this week."],
+    ["Governed: ", "source, confidence, status, approver and date on every row."],
+    ["Proposed, not imposed: ", "a buyer approves; only approved rows match."],
+    ["Never overwrite: ", "old numbers retire, history still joins."],
+  ], { x: rx + 0.3, y: 2.3, w: rw - 0.6, h: 4.4, fontSize: 12, paraSpaceAfter: 4 });
+  s.addText("Mined from the ERP: 8 mappings. Task 1 adds new ones as Lisa approves them (output/pn_crosswalk_updated.csv).", { x: M, y: 5.8, w: 8.4, h: 0.8, fontFace: BODY, fontSize: 12, italic: true, color: C.slate, margin: 0, isTextBox: true });
+}
+
+
+// ------------------------------------------------------------------ 15 not built
+{
+  const s = base("Scope", "What I deliberately did not build, and why");
+  const items = [
+    ["ERP integration or write-back", "No API access, and a wrong write is expensive. The CSV export is the contract; integration comes after trust."],
+    ["Auto-emailing vendors", "The tool drafts emails; Lisa sends them. Vendor relationships are hers."],
+    ["LLM-first extraction", "6 stable layouts parse deterministically and auditably. The AI reader is a fallback, off by default."],
+    ["Full master-data (MDM) platform", "The crosswalk file, with source, confidence and review status, is the seed. The platform comes later."],
+    ["A 0-100 vendor score", "The weights would be invented. An evidence table with denominators is more honest."],
+    ["A chatbot or a big web app", "Lisa needs a morning action queue, not another interface. Excel is where she works; the small app is optional."],
+  ];
+  const cw = (W - 2 * M - 0.6) / 3, ch = 2.35;
+  items.forEach(([t, d], i) => {
+    const x = M + (i % 3) * (cw + 0.3), y = 1.7 + Math.floor(i / 3) * (ch + 0.3);
+    card(s, x, y, cw, ch);
+    s.addShape(pres.shapes.OVAL, { x: x + 0.25, y: y + 0.28, w: 0.36, h: 0.36, fill: { color: C.white }, line: { color: C.muted, width: 1.5 } });
+    s.addText("✕", { x: x + 0.25, y: y + 0.28, w: 0.36, h: 0.36, fontFace: BODY, fontSize: 13, bold: true, color: C.muted, align: "center", valign: "middle", margin: 0, isTextBox: true });
+    s.addText(t, { x: x + 0.75, y: y + 0.22, w: cw - 0.95, h: 0.5, fontFace: BODY, fontSize: 15, bold: true, color: C.ink, margin: 0, valign: "middle", isTextBox: true });
+    s.addText(d, { x: x + 0.25, y: y + 0.9, w: cw - 0.5, h: ch - 1.05, fontFace: BODY, fontSize: 13, color: C.slate, margin: 0, valign: "top", isTextBox: true });
+  });
+}
+
+
+// ------------------------------------------------------------------ 16 where it falls over
+{
+  const s = base("Limits", "Where this falls over, and what catches it when it does");
+  table(s, ["Failure mode", "What happens today", "Mitigation / next step"], [
+    [{ text: "A new vendor or a changed layout", options: { bold: true } }, "No parser matches; the PDF shows as unreadable", "Beacon's acknowledgment form removes the layout problem; meanwhile manual form or AI reader (off by default)"],
+    [{ text: "Vendors don't use the form", options: { bold: true } }, "They keep sending their own PDFs", "PDFs keep working; start with the 3 vendors that cost the most reading time"],
+    [{ text: "A poor scan", options: { bold: true } }, "OCR can misread a digit", "Every OCR'd doc goes to Needs your OK, shown next to the image"],
+    [{ text: "Two PO lines with the same qty and price", options: { bold: true } }, "An L4 inference could pair the wrong lines", "L4 is never HIGH; always goes to review"],
+    [{ text: "A stale open-PO CSV", options: { bold: true } }, "False \"PO not open\" or \"possible dropped line\"", "Pull the export each morning; show its as-of date"],
+    [{ text: "FX and price tolerance", options: { bold: true } }, "EUR checked at the ERP monthly rate, 1% band", "Confirm with Lisa and AP what counts as a real difference"],
+    [{ text: "Task 2: value at PO price", options: { bold: true } }, "Not invoiced cost; no AP data in the extract", "Add invoice lines, then true price variance"],
+    [{ text: "Task 2: the confirmation feed ends 04/03", options: { bold: true } }, "Promise metrics use POs to 03/30 only", "Ask why the feed stopped"],
+    [{ text: "Task 2: no production-impact data", options: { bold: true } }, "Can rank exposure, but can't prove cost", "Link to expedites and downtime; no causal claims until then"],
+  ], { t: { x: M, y: 1.55, w: W - 2 * M, colW: [3.4, 4.1, 4.63], rowH: 0.52 }, size: 12, hsize: 13 });
+}
+
+
+// ------------------------------------------------------------------ 17 questions
+{
+  const s = base("What I wish I'd asked", "Questions for Lisa and the plant manager, each tied to the data");
+  const colW = (W - 2 * M - 0.4) / 2;
+  const qs = [
+    ["LISA", [
+      "When a line is missing from an acknowledgment, what do you do today, and how often was it really dropped vs. confirmed later?",
+      "Which miss cost you most last quarter: a short, a price or a date? That sets the priority order.",
+      "Apex CRES bar confirmed +1-2% since Feb while POs stayed $3.92: a negotiated alloy surcharge that never reached the PO?",
+      "What price difference do you let through without a call? Is 1% right for EUR? Is it different for services?",
+      "Who approves a new vendor part number: you or engineering? Do vendors warn you before renumbering?",
+      "Which date is authoritative when they disagree: our required date, the vendor's promise, or the MRP need date?",
+      "What would you need to see for two weeks before you stop opening every PDF yourself?",
+    ]],
+    ["PLANT MANAGER", [
+      "What does a late heat-treat lot actually cost: downtime, overtime, a customer expedite? That turns on-time % into dollars.",
+      "Who set the 19-day heat-treat lead time in MRP? Continental quotes 28.",
+      "Is Continental the only qualified (e.g. Nadcap) heat treater for these parts, or is there a second source?",
+      "Is Apex at 85% of spend a deliberate single-source decision? Is there a contract price for CRES bar?",
+      "Should months-old short-ship balances be closed? Who can short-close a PO?",
+      "Which parts are single-sourced or on customer-critical programs? That turns lateness into risk.",
+      "Which decision should this readout drive: re-source, renegotiate or re-plan? How often: monthly?",
+    ]],
+  ];
+  qs.forEach(([who, list], c) => {
+    const x = M + c * (colW + 0.4);
+    card(s, x, 1.6, colW, 5.25);
+    s.addText(who, { x: x + 0.3, y: 1.75, w: colW - 0.6, h: 0.3, fontFace: BODY, fontSize: 12, bold: true, color: C.accent, charSpacing: 2, margin: 0, isTextBox: true });
+    s.addText(list.map((q, i) => ({ text: q, options: { bullet: { type: "number" }, breakLine: i < list.length - 1 } })), {
+      x: x + 0.3, y: 2.1, w: colW - 0.6, h: 4.65, fontFace: BODY, fontSize: 12.5, color: C.ink, paraSpaceAfter: 5, valign: "top", margin: 0.03, isTextBox: true,
+    });
+  });
+}
+
+
+// ------------------------------------------------------------------ 18 data wish-list + next steps
+{
+  const s = base("Data I wish I'd had · 30 / 60 / 90", "What would sharpen the answers, and how this goes into use");
+  const lw = 6.2;
+  s.addText("Data I wish I'd had (absent from the extract)", { x: M, y: 1.6, w: lw, h: 0.4, fontFace: HEAD, fontSize: 16, bold: true, color: C.ink, margin: 0, isTextBox: true });
+  bullets(s, [
+    ["Invoice / AP lines: ", "actual price paid, and therefore true price variance"],
+    ["Production impact: ", "downtime, expedites, late customer shipments"],
+    ["Quality / NCR data ", "with dates we can trust (qc_hold dates can't be)"],
+    ["The full vendor master: ", "6 vendors in the files vs ~30 active suppliers"],
+    ["PO change and cancel history, ", "and the confirmation feed after 04/03"],
+    ["Supplier agreements: ", "lead-time commitments, surcharge clauses, strategic status"],
+    ["The MRP lead-time master ", "and who changes it"],
+  ], { x: M, y: 2.05, w: lw, h: 4.7, fontSize: 14 });
+  const rx = M + lw + 0.4, rw = W - M - rx;
+  const steps = [
+    ["Days 1-30", "Shadow week with Lisa (target: zero misses, time saved measured); schedule the 6am run; Continental call with the lead-time data."],
+    ["Days 31-60", "Supplier packs and acknowledgment forms to Continental, Ostmark, Heritage; planning fixes MRP lead times; clear the $128k backlog."],
+    ["Days 61-90", "Approved crosswalk loaded as the ERP vendor-part cross-reference; readout refreshed monthly; decide on a portal or EDI 855."],
+    ["Portfolio", "Package the pattern (parsers + rules + workbook) for the next Tinicum company with the same supplier-paperwork problem."],
+  ];
+  steps.forEach(([t, d], i) => {
+    const y = 1.6 + i * 1.3;
+    card(s, rx, y, rw, 1.15, i === 0 ? "FBE9DF" : C.tint);
+    s.addText(t, { x: rx + 0.25, y: y + 0.12, w: 1.3, h: 0.4, fontFace: HEAD, fontSize: 14, bold: true, color: C.accent, margin: 0, isTextBox: true });
+    s.addText(d, { x: rx + 1.55, y: y + 0.1, w: rw - 1.75, h: 0.95, fontFace: BODY, fontSize: 13, color: C.ink, margin: 0, valign: "middle", isTextBox: true });
+  });
+  s.addNotes("Success metric for week 1: Lisa's reconciliation time drops from about 90 minutes, and the tool misses nothing she catches by hand. False alarms are acceptable at first; misses are not.");
+}
+
+
+// ------------------------------------------------------------------ close
+{
+  const s = base(null, null, true);
+  s.addText("CLOSING", { x: M, y: 1.3, w: 8, h: 0.35, fontFace: BODY, fontSize: 13, bold: true, color: C.accent, charSpacing: 3, margin: 0, isTextBox: true });
+  s.addText("From a stack of PDFs to a controlled daily workflow", { x: M, y: 1.75, w: 12, h: 0.9, fontFace: HEAD, fontSize: 34, bold: true, color: C.white, margin: 0, isTextBox: true });
+  bullets(s, [
+    ["Lisa ", "gets a prioritised, auditable exception queue instead of 35 PDFs."],
+    ["The plant manager ", "gets a supplier view tied to business impact, not anecdote, and a watch list for what's coming."],
+    ["Humans stay in control ", "where commercial judgment or low-confidence extraction matters."],
+    ["Next is not a bigger dashboard: ", "one shadow week with Lisa, measure time saved and misses caught, then productionise what earned it."],
+    ["Reusable across the portfolio: ", "any company that receives unstructured supplier paperwork has the same shape of problem."],
+  ], { x: M, y: 2.95, w: 11.5, h: 3.4, fontSize: 17, color: C.white, paraSpaceAfter: 10 });
+  s.addText("Thank you  ·  questions?", { x: M, y: 6.45, w: 8, h: 0.4, fontFace: HEAD, fontSize: 18, italic: true, color: "CFD8DF", margin: 0, isTextBox: true });
+}
+
 // ------------------------------------------------------------------ 13 apex + watch
 {
-  const s = base("Task 2 · Second call and watch list", "Call Apex second, about money not delivery; watch three others");
+  const s = base("Appendix · Second call and watch list", "Call Apex second, about money not delivery; watch three others");
   const lw = 6.2;
   card(s, M, 1.65, lw, 5.1, "FBE9DF");
   s.addText("Apex Bar & Tube: a commercial call", { x: M + 0.3, y: 1.85, w: lw - 0.6, h: 0.4, fontFace: HEAD, fontSize: 18, bold: true, color: C.ink, margin: 0, isTextBox: true });
@@ -420,128 +607,43 @@ function table(s, header, rows, opts) {
   s.addNotes("Why Apex isn't first: its delivery is fine. The issue is commercial and cumulative, and the right person is probably Lisa plus whoever owns the supply agreement. The price creep may be a legitimate alloy surcharge that never made it into the PO price; that's a question, not an accusation.");
 }
 
-// ------------------------------------------------------------------ 14 part-number cleanup
+
+// ------------------------------------------------------------------ 8 memory
 {
-  const s = base("Task 2 · Toward the part-number cleanup", "The crosswalk grows from daily work and seeds the part master");
-  const pend = (t) => ({ text: t, options: { bold: true, color: C.amber } });
-  table(s, ["Vendor", "Vendor PN", "Beacon PN", "Source", "Status"], [
-    ["Heritage", "APH-441-OS", "CHB-9472-4", "This week's PDF (qty+price)", pend("PENDING: ERP had APH-4411")],
-    ["Ostmark", "OST-CAR-A-100", "TOOL-INS-CAR", "This week's PDF (qty+price)", pend("PENDING: ERP had WZ-HM-EIN")],
-    ["Heritage", "APH-125 / 318 / 441 / 4411", "CHB-3301 / 7715 / 9472-3 / 9472-4", "ERP confirmations × PO lines", "Seen 30-44 times each"],
-    ["Heritage", { text: "K-1050", options: { bold: true, color: C.red } }, "CHB-5520", "ERP confirmations × PO lines", "Seen 41 times"],
-    ["Ostmark", { text: "K-1050", options: { bold: true, color: C.red } }, "TOOL-PUNCH-STD", "ERP confirmations × PO lines", "Same PN, different part!"],
-    ["Ostmark", "WZ-9472-DS / WZ-HM-EIN", "TOOL-DIE-9472 / TOOL-INS-CAR", "ERP confirmations × PO lines", "Seen 17-20 times each"],
-  ], { t: { x: M, y: 1.65, w: 8.4, colW: [1.0, 2.0, 2.1, 1.75, 1.55], rowH: 0.55 }, size: 11 });
-  const rx = M + 8.8, rw = W - M - rx;
-  card(s, rx, 1.65, rw, 5.1);
-  s.addText("For the cleanup", { x: rx + 0.3, y: 1.85, w: rw - 0.6, h: 0.4, fontFace: HEAD, fontSize: 16, bold: true, color: C.ink, margin: 0, isTextBox: true });
-  bullets(s, [
-    ["Key on (vendor, vendor PN), ", "never the PN alone: K-1050 means two different parts."],
-    ["Vendors renumber quietly: ", "2 renumberings caught this week."],
-    ["Each row keeps ", "source, confidence, first/last seen and review status."],
-    ["Path: ", "Lisa approves in the desk → crosswalk file → import as the part-master seed."],
-  ], { x: rx + 0.3, y: 2.35, w: rw - 0.6, h: 4.3, fontSize: 13 });
-  s.addText("Mined from the ERP: 8 mappings. Task 1 adds new ones as Lisa approves them (output/pn_crosswalk_updated.csv).", { x: M, y: 5.8, w: 8.4, h: 0.8, fontFace: BODY, fontSize: 12, italic: true, color: C.slate, margin: 0, isTextBox: true });
+  const s = base("Appendix · The past and future problem", "A desk that remembers: tomorrow's list shows only what's new");
+  table(s, ["Situation", "What the tool does"], [
+    ["Same PDF emailed twice", "Recognised by its content hash and ignored"],
+    ["Lisa marks an item Done", "Stays done tomorrow, with her note"],
+    ["Vendor sends a corrected acknowledgment", "The open item closes by itself, with the reason"],
+    ["A new problem appears on a line she had closed", "Reopens it and says why"],
+    ["Vendor keeps moving the promise date", "The FIRST promise is never overwritten, so the history stays honest"],
+    ["Lisa approves a vendor part number once", "Matches automatically from then on and joins the part-number crosswalk"],
+  ], { t: { x: M, y: 1.7, w: 7.9, colW: [3.4, 4.5], rowH: 0.62 }, size: 13, hsize: 13 });
+  const rx = M + 8.3, rw = W - M - rx;
+  card(s, rx, 1.7, rw, 4.95);
+  s.addText("Why keep the first promise", { x: rx + 0.3, y: 1.9, w: rw - 0.6, h: 0.4, fontFace: HEAD, fontSize: 17, bold: true, color: C.ink, margin: 0, isTextBox: true });
+  s.addText("If every revised date overwrites the last one, every PO ends up looking on time and vendor performance can't be measured. The same trap is in the ERP: 30 confirmations were superseded.", { x: rx + 0.3, y: 2.75, w: rw - 0.6, h: 1.4, fontFace: BODY, fontSize: 13, color: C.slate, margin: 0, valign: "top", isTextBox: true });
+  s.addText("Tested", { x: rx + 0.3, y: 4.2, w: rw - 0.6, h: 0.35, fontFace: HEAD, fontSize: 17, bold: true, color: C.ink, margin: 0, isTextBox: true });
+  s.addText("59 automated tests. TestDayTwo runs day 1 on the real PDFs, applies Lisa's Excel edits, then feeds a revised vendor PDF on day 2 and checks each row above.", { x: rx + 0.3, y: 4.6, w: rw - 0.6, h: 1.9, fontFace: BODY, fontSize: 13, color: C.slate, margin: 0, valign: "top", isTextBox: true });
+  s.addNotes("This is the answer to 'is it a one-time script?'. The store is one SQLite file: items, notes, append-only promise history, crosswalk approvals and file hashes. The Excel and the app read and write the same store.");
 }
 
-// ------------------------------------------------------------------ 15 not built
+
+
+// ------------------------------------------------------------------ 7 screenshots
 {
-  const s = base("Scope", "What I deliberately did not build, and why");
-  const items = [
-    ["ERP integration or write-back", "No API access, and a wrong write is expensive. The CSV export is the contract; integration comes after trust."],
-    ["Auto-emailing vendors", "The tool drafts emails; Lisa sends them. Vendor relationships are hers."],
-    ["LLM-first extraction", "6 stable layouts parse deterministically and auditably. The AI reader is a fallback, off by default."],
-    ["Full master-data (MDM) platform", "The crosswalk file, with source, confidence and review status, is the seed. The platform comes later."],
-    ["A 0-100 vendor score", "The weights would be invented. An evidence table with denominators is more honest."],
-    ["A vendor portal or EDI (yet)", "Vendors live in email and Excel. The form fields map 1:1 to a portal or EDI 855 later; no hosting or logins now."],
-  ];
-  const cw = (W - 2 * M - 0.6) / 3, ch = 2.35;
-  items.forEach(([t, d], i) => {
-    const x = M + (i % 3) * (cw + 0.3), y = 1.7 + Math.floor(i / 3) * (ch + 0.3);
-    card(s, x, y, cw, ch);
-    s.addShape(pres.shapes.OVAL, { x: x + 0.25, y: y + 0.28, w: 0.36, h: 0.36, fill: { color: C.white }, line: { color: C.muted, width: 1.5 } });
-    s.addText("✕", { x: x + 0.25, y: y + 0.28, w: 0.36, h: 0.36, fontFace: BODY, fontSize: 13, bold: true, color: C.muted, align: "center", valign: "middle", margin: 0, isTextBox: true });
-    s.addText(t, { x: x + 0.75, y: y + 0.22, w: cw - 0.95, h: 0.5, fontFace: BODY, fontSize: 15, bold: true, color: C.ink, margin: 0, valign: "middle", isTextBox: true });
-    s.addText(d, { x: x + 0.25, y: y + 0.9, w: cw - 0.5, h: ch - 1.05, fontFace: BODY, fontSize: 13, color: C.slate, margin: 0, valign: "top", isTextBox: true });
-  });
+  const s = base("Appendix · What Lisa sees", "Today's list, plus the things the tool is not sure about");
+  const h1 = 5.25, w1 = h1 * 1630 / 1240;
+  s.addImage({ path: A("today_c.png"), x: M, y: 1.6, w: w1, h: h1, shadow: { type: "outer", blur: 6, offset: 2, angle: 90, color: "000000", opacity: 0.25 } });
+  const rx = M + w1 + 0.4, rw = W - M - rx, h2 = rw * 740 / 1630;
+  s.addImage({ path: A("review_c.png"), x: rx, y: 1.6, w: rw, h: h2, shadow: { type: "outer", blur: 6, offset: 2, angle: 90, color: "000000", opacity: 0.25 } });
+  s.addText("Needs your OK: the vendor renamed a part. The tool shows why it thinks so and what our history calls it. One click approves it for good.", { x: rx, y: 1.7 + h2, w: rw, h: 1.0, fontFace: BODY, fontSize: 12, color: C.slate, margin: 0, valign: "top", isTextBox: true });
+  const h3 = rw * 530 / 1630;
+  s.addImage({ path: A("review_ocr_c.png"), x: rx, y: 2.9 + h2, w: rw, h: h3, shadow: { type: "outer", blur: 6, offset: 2, angle: 90, color: "000000", opacity: 0.25 } });
+  s.addText("Scans are shown next to what OCR read, so checking takes seconds, not retyping.", { x: rx, y: 3.0 + h2 + h3, w: rw, h: 0.6, fontFace: BODY, fontSize: 12, color: C.slate, margin: 0, valign: "top", isTextBox: true });
+  s.addNotes("Live demo here if time allows: open the app, click 'Load this week's sample confirmations', tick one Done, approve one part number, then Download Excel and show the same state in the workbook.");
 }
 
-// ------------------------------------------------------------------ 16 where it falls over
-{
-  const s = base("Limits", "Where this falls over, and what catches it when it does");
-  table(s, ["Failure mode", "What happens today", "Mitigation / next step"], [
-    [{ text: "A new vendor or a changed layout", options: { bold: true } }, "No parser matches; the PDF shows as unreadable", "Beacon's acknowledgment form removes the layout problem; meanwhile manual form or AI reader (off by default)"],
-    [{ text: "Vendors don't use the form", options: { bold: true } }, "They keep sending their own PDFs", "PDFs keep working; start with the 3 vendors that cost the most reading time"],
-    [{ text: "A poor scan", options: { bold: true } }, "OCR can misread a digit", "Every OCR'd doc goes to Needs your OK, shown next to the image"],
-    [{ text: "Two PO lines with the same qty and price", options: { bold: true } }, "An L4 inference could pair the wrong lines", "L4 is never HIGH; always goes to review"],
-    [{ text: "A stale open-PO CSV", options: { bold: true } }, "False \"PO not open\" or \"possible dropped line\"", "Pull the export each morning; show its as-of date"],
-    [{ text: "FX and price tolerance", options: { bold: true } }, "EUR checked at the ERP monthly rate, 1% band", "Confirm with Lisa and AP what counts as a real difference"],
-    [{ text: "Task 2: value at PO price", options: { bold: true } }, "Not invoiced cost; no AP data in the extract", "Add invoice lines, then true price variance"],
-    [{ text: "Task 2: the confirmation feed ends 04/03", options: { bold: true } }, "Promise metrics use POs to 03/30 only", "Ask why the feed stopped"],
-    [{ text: "Task 2: no production-impact data", options: { bold: true } }, "Can rank exposure, but can't prove cost", "Link to expedites and downtime; no causal claims until then"],
-  ], { t: { x: M, y: 1.55, w: W - 2 * M, colW: [3.4, 4.1, 4.63], rowH: 0.52 }, size: 12, hsize: 13 });
-}
 
-// ------------------------------------------------------------------ 17 questions
-{
-  const s = base("What I wish I'd asked", "Questions for Lisa and the plant manager, each tied to the data");
-  const colW = (W - 2 * M - 0.4) / 2;
-  const qs = [
-    ["LISA", [
-      "When a line is missing from an acknowledgment, what do you do today, and how often was it really dropped vs. confirmed later?",
-      "Which miss cost you most last quarter: a short, a price or a date? That sets the priority order.",
-      "Apex CRES bar confirmed +1-2% since Feb while POs stayed $3.92: a negotiated alloy surcharge that never reached the PO?",
-      "What price difference do you let through without a call? Is 1% right for EUR? Is it different for services?",
-      "Who approves a new vendor part number: you or engineering? Do vendors warn you before renumbering?",
-      "What would you need to see for two weeks before you stop opening every PDF yourself?",
-    ]],
-    ["PLANT MANAGER", [
-      "What does a late heat-treat lot actually cost: downtime, overtime, a customer expedite? That turns on-time % into dollars.",
-      "Who set the 19-day heat-treat lead time in MRP? Continental quotes 28.",
-      "Is Continental the only qualified (e.g. Nadcap) heat treater for these parts, or is there a second source?",
-      "Is Apex at 85% of spend a deliberate single-source decision? Is there a contract price for CRES bar?",
-      "Should months-old short-ship balances be closed? Who can short-close a PO?",
-      "Which decision should this readout drive: re-source, renegotiate or re-plan? How often: monthly?",
-    ]],
-  ];
-  qs.forEach(([who, list], c) => {
-    const x = M + c * (colW + 0.4);
-    card(s, x, 1.6, colW, 5.25);
-    s.addText(who, { x: x + 0.3, y: 1.75, w: colW - 0.6, h: 0.3, fontFace: BODY, fontSize: 12, bold: true, color: C.accent, charSpacing: 2, margin: 0, isTextBox: true });
-    s.addText(list.map((q, i) => ({ text: q, options: { bullet: { type: "number" }, breakLine: i < list.length - 1 } })), {
-      x: x + 0.3, y: 2.1, w: colW - 0.6, h: 4.65, fontFace: BODY, fontSize: 13, color: C.ink, paraSpaceAfter: 6, valign: "top", margin: 0.03, isTextBox: true,
-    });
-  });
-}
-
-// ------------------------------------------------------------------ 18 data wish-list + next steps
-{
-  const s = base("Data I wish I'd had · Next steps", "What would sharpen the answers, and how this goes into use");
-  const lw = 6.2;
-  s.addText("Data I wish I'd had (absent from the extract)", { x: M, y: 1.6, w: lw, h: 0.4, fontFace: HEAD, fontSize: 16, bold: true, color: C.ink, margin: 0, isTextBox: true });
-  bullets(s, [
-    ["Invoice / AP lines: ", "actual price paid, and therefore true price variance"],
-    ["Production impact: ", "downtime, expedites, late customer shipments"],
-    ["Quality / NCR data ", "with dates we can trust (qc_hold dates can't be)"],
-    ["The full vendor master: ", "6 vendors in the files vs ~30 active suppliers"],
-    ["PO change and cancel history, ", "and the confirmation feed after 04/03"],
-    ["Supplier agreements: ", "lead-time commitments, surcharge clauses, strategic status"],
-    ["The MRP lead-time master ", "and who changes it"],
-  ], { x: M, y: 2.05, w: lw, h: 4.7, fontSize: 14 });
-  const rx = M + lw + 0.4, rw = W - M - rx;
-  const steps = [
-    ["Week 1", "Shadow Lisa: run it alongside her manual check. Count misses and false alarms; tune tolerances with her."],
-    ["Week 2", "Send supplier packs to Continental, Ostmark and Heritage; attach the acknowledgment form to their new POs. Schedule the 6am run."],
-    ["Month 1", "Planning updates MRP lead times from the gap report; Lisa clears the $128k of old open balances; crosswalk becomes the part-master seed."],
-    ["Monthly", "Refresh the vendor readout; take the Continental lead-time data to the call."],
-  ];
-  steps.forEach(([t, d], i) => {
-    const y = 1.6 + i * 1.3;
-    card(s, rx, y, rw, 1.15, i === 0 ? "FBE9DF" : C.tint);
-    s.addText(t, { x: rx + 0.25, y: y + 0.12, w: 1.3, h: 0.4, fontFace: HEAD, fontSize: 16, bold: true, color: C.accent, margin: 0, isTextBox: true });
-    s.addText(d, { x: rx + 1.55, y: y + 0.1, w: rw - 1.75, h: 0.95, fontFace: BODY, fontSize: 13, color: C.ink, margin: 0, valign: "middle", isTextBox: true });
-  });
-  s.addNotes("Success metric for week 1: Lisa's reconciliation time drops from about 90 minutes, and the tool misses nothing she catches by hand. False alarms are acceptable at first; misses are not.");
-}
 
 pres.writeFile({ fileName: path.join(__dirname, "Beacon_FDE_Casestudy.pptx") }).then((f) => console.log("->", f));

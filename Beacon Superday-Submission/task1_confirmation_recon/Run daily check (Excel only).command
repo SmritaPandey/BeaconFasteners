@@ -1,5 +1,5 @@
 #!/bin/bash
-# For anyone who prefers Excel only: reads the PDFs in ./inbox, writes today's workbook to ./output and opens it.
+# For anyone who prefers Excel only: reads the PDFs in $INBOX (default $BEACON_DATA/confirmations), writes the workbook to ./output and opens it.
 cd "$(dirname "$0")"
 [ -x .venv/bin/python ] || { python3 -m venv .venv && ./.venv/bin/pip install -q -r requirements.txt; }
 DATA="${BEACON_DATA:-/data}"

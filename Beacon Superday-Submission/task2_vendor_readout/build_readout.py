@@ -5,7 +5,8 @@ Build the plant manager's vendor readout from the ERP extract.
 
 Writes:
   Vendor_Readout.xlsx     - workbook: summary, monthly value (+chart), scorecard,
-                            delivery trend, open past-due lines, price exceptions,
+                            delivery trend, open orders at risk (forward-looking),
+                            open past-due lines, price exceptions,
                             part-number crosswalk, data quality & definitions
   vendor_readout.html     - one-page readout (self-contained, opens in any browser)
 """
@@ -18,6 +19,7 @@ import numpy as np
 import pandas as pd
 
 from analysis import LATE_GRACE_DAYS, METRIC_DEFINITIONS, build
+from forward_risk import backtest, forward_book
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
@@ -279,6 +281,24 @@ summary:focus-visible, a:focus-visible { outline: 2px solid var(--s1); outline-o
 dl { display: grid; grid-template-columns: minmax(140px, 220px) 1fr; gap: 6px 16px; margin: 12px 0 0; font-size: 13.5px; }
 dt { font-weight: 600; } dd { margin: 0; color: var(--ink-2); min-width: 0; }
 @media (max-width: 560px) { dl { grid-template-columns: 1fr; } .answer { padding: 18px; } }
+/* Print / PDF: plain flow layout (grid rows fragment badly across pages), full-width tables, nothing clipped */
+@media print {
+  body { background: #fff; font-size: 11px; }
+  .wrap { display: block; max-width: none; padding: 0; }
+  .wrap > * { margin-bottom: 18px; }
+  section { display: block; }
+  section > * + * { margin-top: 8px; }
+  .answer, .kpis, .figure, tr, details { break-inside: avoid; }
+  h2, h3 { break-after: avoid; }
+  .tbl, .figure { overflow: visible; }
+  .figure svg { min-width: 0; }
+  table { font-size: 9px; }
+  th, td { padding: 3px 5px; white-space: normal; }
+  td.num { font-size: 9px; }
+  td.txt, th.txt { min-width: 0; }
+  .kpi .n { font-size: 18px; }
+  summary { list-style: none; }
+}
 """
 
 FONTS = ('<link rel="preconnect" href="https://fonts.googleapis.com">'
@@ -392,6 +412,8 @@ def html_page(a, f, crosswalk_rows, standalone=True):
   <ul>{''.join('<li>%s</li>' % w for w in f['watch'])}</ul>
 </section>
 
+{forward_html(a, f)}
+
 <section>
   <div class="kpis">
     <div class="kpi"><span class="n">{money(monthly['Total'].sum())}</span><span class="l">received at PO price, 8.5 months</span></div>
@@ -485,6 +507,34 @@ def html_page(a, f, crosswalk_rows, standalone=True):
 # Excel
 # ---------------------------------------------------------------------------
 
+def forward_html(a, f):
+    """'Looking ahead' section: open orders due in the next 60 days that need attention."""
+    fw, bt = f.get("forward"), f.get("backtest")
+    if fw is None or not len(fw):
+        return ""
+    hi = fw[fw.tier != "OK"]
+    unc = fw[(fw.promise_source == "None on file") & (fw.days_to_due <= 14)].sort_values("open_value", ascending=False)
+    rows = []
+    for x in pd.concat([hi, unc.head(8)]).itertuples():
+        rows.append("<tr%s><td>%s</td><td>%s</td><td class='num'>%s L%d</td><td class='num'>%s</td><td class='num'>%s</td>"
+                    "<td class='num'>%s</td><td class='num'>%s</td><td class='txt'>%s</td></tr>" % (
+                        ' class="flag"' if x.tier == "HIGH" else "", esc(x.tier if x.tier != "OK" else "Chase"), esc(x.vendor),
+                        x.po_number, x.line_no, esc(x.part_id), money(x.open_value), x.required.strftime("%m/%d"),
+                        x.promised.strftime("%m/%d") if pd.notna(x.promised) else "none", esc(x.why)))
+    return f"""
+<section>
+  <h2>Looking ahead: open orders due in the next 60 days</h2>
+  <p class="sub">The same history, turned into a watch list for planning. {len(fw)} open lines worth {money(fw.open_value.sum())} are due between {(a['as_of'] + pd.Timedelta(days=1)).strftime('%m/%d')} and {(a['as_of'] + pd.Timedelta(days=60)).strftime('%m/%d')}.</p>
+  <div class="kpis">
+    <div class="kpi"><span class="n">{(fw.tier == 'HIGH').sum()}</span><span class="l">lines at high risk of arriving late ({money(fw[fw.tier == 'HIGH'].open_value.sum())})</span></div>
+    <div class="kpi"><span class="n">{len(unc)}</span><span class="l">lines due within 14 days with no acknowledgment on file ({money(unc.open_value.sum())})</span></div>
+    <div class="kpi"><span class="n">{bt['severe_caught']} of {bt['severe']}</span><span class="l">lines &gt;7 days late in the past that this rule would have flagged</span></div>
+  </div>
+  <div class="tbl"><table><thead><tr><th>Status</th><th>Vendor</th><th>PO / line</th><th>Part</th><th>Open $</th><th>Needed</th><th>Promised</th><th class='txt'>Why</th></tr></thead><tbody>{''.join(rows)}</tbody></table></div>
+  <p class="note">Flag rule: the vendor already promises after our need date, or it has delivered this part on time less than 60% of the time (5+ past lines). Backtested on 8 months without look-ahead: {pct(bt['precision'])} of flagged lines arrived late, against {pct(bt['base_rate'])} overall, so treat it as a watch list, not a forecast. Promise dates come from the ERP and from this week's acknowledgments read by the Task 1 tool. "No acknowledgment on file" may partly reflect the ERP confirmation feed stopping on 04/03. Full list: <i>Open Orders at Risk</i> tab.</p>
+</section>"""
+
+
 def write_xlsx(path, a, f, crosswalk_rows):
     import xlsxwriter
     s = a["score"]
@@ -521,7 +571,17 @@ def write_xlsx(path, a, f, crosswalk_rows):
     for w in f["watch"]:
         ws.write(r, 0, "• " + strip(w), W); r += 1
     r += 1
-    ws.write(r, 0, "Tabs: Monthly Value | Vendor Scorecard | On-time Trend | Past-due Open Lines | Price Above PO | "
+    fw, bt = f["forward"], f["backtest"]
+    if len(fw):
+        hi, unc = fw[fw.tier == "HIGH"], fw[(fw.promise_source == "None on file") & (fw.days_to_due <= 14)]
+        ws.write(r, 0, "LOOKING AHEAD: OPEN ORDERS DUE IN THE NEXT 60 DAYS (%s)" % money(fw.open_value.sum()), T2); r += 1
+        ws.write(r, 0, "• %d line(s) at high risk of arriving late (%s): %s." % (len(hi), money(hi.open_value.sum()), "; ".join(
+            "%s %s L%d" % (x.vendor.split()[0], x.po_number, x.line_no) for x in hi.itertuples())), W); r += 1
+        ws.write(r, 0, "• %d line(s) due within 14 days (%s) have no acknowledgment on file - chase them." % (
+            len(unc), money(unc.open_value.sum())), W); r += 1
+        ws.write(r, 0, "• Backtest of the same rule on 8 months of history: it flagged %d of the %d lines that arrived more than 7 days late; "
+                       "about 1 in 3 flagged lines was late. A watch list, not a prediction." % (bt["severe_caught"], bt["severe"]), W); r += 2
+    ws.write(r, 0, "Tabs: Monthly Value | Vendor Scorecard | On-time Trend | Open Orders at Risk | Past-due Open Lines | Price Above PO | "
                    "Revised Confirmations | PN Crosswalk | Data Quality | Definitions", W)
 
     # Monthly value
@@ -617,6 +677,33 @@ def write_xlsx(path, a, f, crosswalk_rows):
     ch.set_y_axis({"num_format": "0%", "min": 0, "max": 1})
     ch.set_size({"width": 900, "height": 380})
     ws.insert_chart(len(mo) + 3, 0, ch)
+
+    # Open orders at risk (forward-looking)
+    fw, bt = f["forward"], f["backtest"]
+    ws = wb.add_worksheet("Open Orders at Risk")
+    cols = [("Risk", 7), ("Vendor", 26), ("PO", 15), ("Line", 5), ("Part", 15), ("Open qty", 9), ("Open $", 11),
+            ("Required", 11), ("Days to due", 8), ("Promised", 11), ("Promise from", 22), ("Vendor+part on time", 10),
+            ("Past lines", 7), ("Why", 60), ("Suggested action", 45)]
+    ws.write(0, 0, "Open PO lines due %s to %s. Flag rule: vendor already promises after our need date, or this vendor delivers this "
+                   "part on time <60%% of the time (5+ past lines). Backtest on history: flagged %d of %d lines that arrived >7 days late; "
+                   "%.0f%% of flagged lines were late vs %.0f%% overall." % (
+                       (a["as_of"] + pd.Timedelta(days=1)).strftime("%m/%d/%Y"), (a["as_of"] + pd.Timedelta(days=60)).strftime("%m/%d/%Y"),
+                       bt["severe_caught"], bt["severe"], 100 * bt["precision"], 100 * bt["base_rate"]), W)
+    ws.set_row(0, 45)
+    for c, (h, w) in enumerate(cols):
+        ws.write(2, c, h, H)
+        ws.set_column(c, c, w)
+    tier_fmt = {"HIGH": wb.add_format({"bg_color": "#F8CBAD", "bold": True}), "WATCH": wb.add_format({"bg_color": "#FFE699"}),
+                "OK": wb.add_format({"bg_color": "#E2EFDA"})}
+    for i, x in enumerate(fw.itertuples(), 3):
+        vals = [x.tier, x.vendor, x.po_number, x.line_no, x.part_id, x.open_qty, x.open_value, x.required.strftime("%Y-%m-%d"),
+                x.days_to_due, x.promised.strftime("%Y-%m-%d") if pd.notna(x.promised) else "", x.promise_source,
+                x.hist_on_time if x.hist_on_time is not None and not pd.isna(x.hist_on_time) else "", x.hist_n, x.why, x.action]
+        for c, v in enumerate(vals):
+            v = v.item() if hasattr(v, "item") else v
+            ws.write(i, c, v, tier_fmt[x.tier] if c == 0 else (M if c == 6 else (P if c == 11 else None)))
+    ws.autofilter(2, 0, 2 + len(fw), len(cols) - 1)
+    ws.freeze_panes(3, 2)
 
     # Past due
     ws = wb.add_worksheet("Past-due Open Lines")
@@ -729,22 +816,48 @@ def crosswalk_rows(a, task1_crosswalk):
     return rows
 
 
+def export_pdf(html_path, pdf_path):
+    """Printable copy for the plant manager. Optional: needs Playwright + Chromium; skipped otherwise."""
+    try:
+        from playwright.sync_api import sync_playwright
+        with sync_playwright() as p:
+            b = p.chromium.launch(executable_path=os.environ.get("BEACON_CHROMIUM") or None)
+            pg = b.new_page()
+            pg.emulate_media(media="print", color_scheme="light")
+            pg.goto("file://" + os.path.abspath(html_path))
+            pg.evaluate("document.querySelectorAll('details').forEach(d => d.open = true)")
+            pg.pdf(path=pdf_path, format="Letter", print_background=True,
+                   margin=dict(top="0.5in", bottom="0.5in", left="0.4in", right="0.4in"))
+            b.close()
+        return pdf_path
+    except Exception as e:  # not installed / no browser: the HTML and workbook are the deliverables
+        print("(PDF copy skipped: %s. Open vendor_readout.html and print to PDF if needed.)" % str(e).splitlines()[0][:80])
+        return None
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--erp", required=True)
     ap.add_argument("--out", default=os.path.join(HERE, "..", "output"))
     ap.add_argument("--task1-crosswalk", default=os.path.join(HERE, "..", "output", "pn_crosswalk_updated.csv"),
                     help="Task 1 output with this week's inferred vendor PNs (optional)")
+    ap.add_argument("--task1-lines", default=os.path.join(HERE, "..", "output", "confirmation_lines_extracted.csv"),
+                    help="Task 1 output: this week's confirmed lines, used for promise dates on open orders (optional)")
     ap.add_argument("--as-of", default=None)
     a_ = ap.parse_args()
     a = build(a_.erp, a_.as_of)
     f = findings(a)
     cw = crosswalk_rows(a, a_.task1_crosswalk)
+    f["forward"] = forward_book(a, a_.task1_lines)
+    f["backtest"] = backtest(a["rec"])
     os.makedirs(a_.out, exist_ok=True)
     write_xlsx(os.path.join(a_.out, "Vendor_Readout.xlsx"), a, f, cw)
     with open(os.path.join(a_.out, "vendor_readout.html"), "w") as fh:
         fh.write(html_page(a, f, cw, standalone=True))
+    pdf = export_pdf(os.path.join(a_.out, "vendor_readout.html"), os.path.join(a_.out, "Vendor_Readout.pdf"))
     print("Call first: %s" % f["call_first"]["vendor"])
+    if pdf:
+        print("-> %s" % pdf)
     print("-> %s" % os.path.join(a_.out, "Vendor_Readout.xlsx"))
     print("-> %s" % os.path.join(a_.out, "vendor_readout.html"))
 
