@@ -559,6 +559,8 @@ def read_document(path, vendors=None, manual=None):
             if ai:
                 ai["raw_text"] = d.get("raw_text", "")
                 d = ai
+            else:
+                d["warnings"].append("AI reader could not read it either: %s" % ai_reader.LAST_ERROR)
     d["file"] = os.path.basename(path)
     validate_doc(d)
     return d
@@ -637,7 +639,10 @@ def main():
     ap.add_argument("--as-of", help="YYYY-MM-DD (default: latest document date in the batch)")
     ap.add_argument("--out", default="output", help="where the workbook (and the memory file) go")
     ap.add_argument("--memory", help="memory file (default: <out>/confirmation_desk.db) - share it with the Desk app")
+    ap.add_argument("--ai", action="store_true", help="let Claude read PDFs no template can (needs ANTHROPIC_API_KEY)")
     a = ap.parse_args()
+    if a.ai:
+        os.environ["BEACON_AI_FALLBACK"] = "1"
     out = run(a.confirmations, a.pos, a.vendors, a.erp, a.crosswalk, a.as_of, a.out, a.memory)
     for k, v in out["stats"].items():
         print("  %-42s %s" % (k, v))
