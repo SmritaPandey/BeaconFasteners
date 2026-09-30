@@ -95,6 +95,21 @@ class TestManualAndAI(unittest.TestCase):
         self.assertEqual(d["lines"][0]["currency"], "EUR")
         self.assertIn("KW 20-22", d["lines"][0]["promise_note"])
 
+    def test_ai_plain_date_is_not_ambiguous(self):
+        import ai_reader
+        line = dict(line_no=1, vendor_pn="", description="", qty=750, unit_price=-1, currency="USD",
+                    promise_date="2026-05-23", promise_text="05/23/2026")
+        d = ai_reader.to_doc(dict(vendor_name="Continental", po_number="PO-4500050023", doc_type="ACK", doc_date="2026-05-12",
+                                  vendor_ref="", notes="", lines=[line]), {})
+        self.assertIsNone(d["lines"][0]["promise_note"])
+
+    def test_docs_without_text_are_not_duplicates_of_each_other(self):
+        # AI-read / hand-typed scans have no text layer; they must be compared on content, not on empty text
+        mk = lambda f, po: dict(file=f, raw_text="", vendor_id="V004", po_number=po, doc_date=None, vendor_ref=None,
+                                lines=[dict(line_no=1, qty=350.0)])
+        active = recon.mark_duplicates([mk("a.pdf", "PO-1"), mk("b.pdf", "PO-2"), mk("c.pdf", "PO-1")])
+        self.assertEqual([d["file"] for d in active], ["a.pdf", "b.pdf"])
+
     def test_ai_off_by_default(self):
         import ai_reader
         os.environ.pop("BEACON_AI_FALLBACK", None)

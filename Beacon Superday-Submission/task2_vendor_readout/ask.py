@@ -34,6 +34,9 @@ that are listed under data_quality). Rules:
 - Do not claim causes the data cannot show (there is no production, quality-cost or invoice data). Say "the data shows X; it does not show why".
 - Distinguish received value, ordered value and open value; say which you mean.
 - Be concise and practical: lead with the answer in one or two sentences, then the evidence, then (if useful) a suggested next step.
+- Do NOT add up, subtract or re-derive numbers yourself - mental arithmetic is where answers go wrong. Use the precomputed \
+totals (received_value_total_usd, open_orders_summary, received_value_by_month_usd, scorecard). If the total someone needs is not precomputed, list the \
+items and say the total should be taken from the workbook (Vendor_Readout.xlsx).
 - Percentages in the data are fractions (0.42 = 42%). Money is USD at PO price.
 
 DATA (JSON):
@@ -44,6 +47,22 @@ def _records(df, cols=None, n=None):
     if n:
         df = df.head(n)
     return json.loads(df.to_json(orient="records", date_format="iso", double_precision=4))
+
+def open_orders_summary(fw):
+    """Totals a manager asks for, computed here so the model never has to add numbers up."""
+    out = []
+    if not len(fw):
+        return out
+    fw = fw.assign(confirmed=fw.promise_source != "None on file")
+    for days in (7, 14, 30, 60):
+        w = fw[fw.days_to_due <= days]
+        for (vendor, tier, confirmed), g in w.groupby(["vendor", "tier", "confirmed"]):
+            out.append(dict(due_within_days=days, vendor=vendor, risk_tier=tier, has_confirmation=bool(confirmed),
+                            lines=int(len(g)), open_value=round(float(g.open_value.sum()), 2)))
+        out.append(dict(due_within_days=days, vendor="ALL", risk_tier="ALL", has_confirmation="ALL",
+                        lines=int(len(w)), open_value=round(float(w.open_value.sum()), 2)))
+    return out
+
 
 def build_context(erp, task1_lines=None):
     """The computed tables, as one JSON string. Same numbers the readout workbook shows."""
@@ -58,6 +77,8 @@ def build_context(erp, task1_lines=None):
         as_of=str(a["as_of"].date()), history_from=str(a["first_day"].date()), history_to=str(a["last_day"].date()),
         vendors={k: v for k, v in a["vend"].items()},
         scorecard=_records(s),
+        received_value_total_usd=dict(all_vendors=round(float(a["monthly"]["Total"].sum()), 2),
+                                      by_vendor={a["vend"][v]: round(float(a["monthly"][v].sum()), 2) for v in a["vend"].index}),
         received_value_by_month_usd=json.loads(monthly.round(2).to_json(orient="index")),
         on_time_by_required_month=json.loads(a["monthly_ot"].rename(columns=a["vend"].to_dict()).round(3).to_json(orient="index")),
         continental_by_service=_records(a["v4_parts"].reset_index()),
@@ -71,6 +92,7 @@ def build_context(erp, task1_lines=None):
         open_orders_next_60_days=_records(fw, ["tier", "vendor", "po_number", "line_no", "part_id", "open_qty", "open_value",
                                                "required", "days_to_due", "promised", "promise_source", "hist_on_time",
                                                "hist_n", "why"]),
+        open_orders_summary=open_orders_summary(fw),
         watch_list_backtest=backtest(a["rec"]),
         data_quality=[dict(issue=k, value=str(v), handling=h) for k, v, h in a["dq"]],
         metric_definitions=dict(METRIC_DEFINITIONS),

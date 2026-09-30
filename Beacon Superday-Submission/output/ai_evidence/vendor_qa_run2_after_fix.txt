@@ -1,0 +1,67 @@
+==========================================================================================
+Q: Which open orders are at risk in the next two weeks, and how much open value has no confirmation?
+# Open orders at risk and unconfirmed open value, next 14 days
+
+**Two open lines are flagged HIGH risk, both at Continental, worth $3,000 in open value.** Separately, 26 open lines due in the next 14 days have no vendor confirmation on file: 14 at Apex, 11 at Heritage and 1 at Liberty.
+
+## HIGH-risk lines due within 14 days
+All figures are from open_orders_next_60_days.
+
+| PO / line | Part | Open value | Required | Vendor promise | Why flagged |
+|---|---|---|---|---|---|
+| PO-4500050022 / 1 | HT-PRECIP | $1,200 | 2026-05-21 | 2026-06-11 | Continental promises 21 days after we need it. On time 40% of the last 43 deliveries of this part. |
+| PO-4500050023 / 1 | HT-PRECIP | $1,800 | 2026-05-23 | 2026-05-23 | Promise matches our date, but same 40% track record. We allowed 21 days; this part usually takes 26. |
+
+These two lines total $3,000 (open_orders_summary: Continental, HIGH, 14 days, 2 lines, $3,000).
+
+The next HIGH-risk line, Heritage PO-4500050012 ($12,900), falls just outside the window. It is required 2026-06-04 (18 days out), and Heritage promises it for 2026-06-18.
+
+## Open value due within 14 days with no confirmation
+All figures are from open_orders_summary.
+
+- **Apex:** 14 lines, $1,731,953. The largest are:
+  - PO-4500045702/1, $526,500
+  - PO-4500045950/1, $328,500
+  - PO-4500045668/1, $176,400
+- **Heritage:** 11 lines, $107,209. Heritage's on-time rate for these parts is 66–79% (open_orders_next_60_days: hist_on_time).
+- **Liberty:** 1 line, $2,000 (PO-4500050019).
+
+The combined unconfirmed total isn't precomputed, so take it from Vendor_Readout.xlsx. For comparison, all open lines due in 14 days, confirmed and unconfirmed, come to 43 lines and $1,962,675.40.
+
+The unconfirmed Apex lines are tier "OK" on track record: Apex's on-time rate for these parts is 81–90%. But they carry most of the open value.
+
+## Caveats
+- **Why confirmations are missing:** the confirmation feed ends 2026-04-03 (data_quality). The data doesn't show whether these vendors never confirmed or whether their confirmations simply aren't in the feed.
+- **How reliable the risk flags are:** in the backtest, flagged lines turned out late 33% of the time, versus 15% for unflagged lines. The flags caught 59 of 63 severely late lines (watch_list_backtest). Treat "OK" as lower risk, not no risk.
+
+## Suggested next steps
+1. Expedite Continental on PO-4500050022.
+2. Get written confirmations from Apex on the three largest lines listed above.
+3. Get written confirmations from Heritage on its 11 unconfirmed lines.
+==========================================================================================
+Q: How much open value from Apex is due in the next 7 days without a confirmation?
+**$1,181,750 of Apex open value, across 10 lines, is due in the next 7 days with no confirmation on file** (open_orders_summary: 7 days, Apex, has_confirmation false, 10 lines, $1,181,750). All 10 are tier "OK"; none are flagged HIGH.
+
+## The 10 lines
+All figures are from open_orders_next_60_days.
+
+| PO / line | Part | Open value | Required | Days to due | Hist. on-time for part |
+|---|---|---|---|---|---|
+| PO-4500045950 / 1 | BAR-TI64-188 | $328,500 | 2026-05-18 | 1 | 89% |
+| PO-4500045875 / 1 | BAR-A286-250 | $76,302 | 2026-05-18 | 1 | 87% |
+| PO-4500045950 / 2 | BAR-CRES-250 | $66,640 | 2026-05-18 | 1 | 81% |
+| PO-4500045668 / 1 | BAR-A286-375 | $176,400 | 2026-05-19 | 2 | 90% |
+| PO-4500045668 / 2 | BAR-CRES-250 | $91,728 | 2026-05-19 | 2 | 81% |
+| PO-4500045787 / 2 | BAR-A286-375 | $100,352 | 2026-05-20 | 3 | 90% |
+| PO-4500045787 / 1 | BAR-CRES-250 | $77,224 | 2026-05-20 | 3 | 81% |
+| PO-4500045910 / 1 | BAR-TI64-188 | $87,750 | 2026-05-21 | 4 | 89% |
+| PO-4500045585 / 1 | BAR-A286-250 | $110,214 | 2026-05-22 | 5 | 87% |
+| PO-4500045631 / 1 | BAR-CRES-250 | $66,640 | 2026-05-22 | 5 | 81% |
+
+The largest line, PO-4500045702/1 ($526,500), is due in 8 days, so it falls outside this 7-day figure but inside the 14-day one.
+
+## Caveat
+The confirmation feed ends 2026-04-03 (data_quality). The data doesn't show whether Apex never confirmed these lines or whether its confirmations just aren't in the feed. Apex confirmed 95% of lines historically (scorecard: conf_coverage 0.95).
+
+## Suggested next step
+Call Apex today about the three lines due tomorrow, starting with PO-4500045950/1 ($328,500).

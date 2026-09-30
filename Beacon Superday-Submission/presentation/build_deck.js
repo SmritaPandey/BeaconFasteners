@@ -77,7 +77,6 @@ function table(s, header, rows, opts) {
     s.addText(v, { x: M + 2.4, y: 4.75 + i * 0.5, w: 9.5, h: 0.4, fontFace: BODY, fontSize: 14, color: C.white, margin: 0, isTextBox: true });
   });
   s.addText("Smrita Pandey", { x: M, y: 6.55, w: 6, h: 0.35, fontFace: BODY, fontSize: 13, color: "9AA7B2", margin: 0, isTextBox: true });
-  s.addNotes("One line: I turned an unstructured confirmation process into a controlled daily workflow, and eight months of ERP data into a supplier decision. ~22 minutes of talk: 3 on the problem, 9 on Task 1, 7 on Task 2, 3 on limits and questions, then Q&A. Every number shown came out of the tools on the case data.");
 }
 
 // ------------------------------------------------------------------ exec
@@ -96,7 +95,6 @@ function table(s, header, rows, opts) {
   bullets(s, [
     ["Silently dropped line: ", "Apex left PO-4500050001 line 2 (1,500 pcs) off its acknowledgment."],
     ["Stray PO: ", "a confirmation arrived for PO-4500060619, which is not an open Beacon PO."],
-    ["Auditable: ", "every row traces to a source file and match method; uncertain matches go to review, never auto-accepted."],
   ], { x: x1, y: 4.25, w: colW - 0.6, h: 2.4, fontSize: 13 });
   stat(s, x2, 2.8, sw, "42%", "Continental on time; other vendors 69-99%", C.red, 26);
   stat(s, x2 + sw, 2.8, sw, "61/63", "of the lines >7 days late are Continental's", C.red, 26);
@@ -104,9 +102,7 @@ function table(s, header, rows, opts) {
   bullets(s, [
     ["Call Continental first. ", "Late most often, by the most, not improving; part of it is our 19-day plan vs their 28-day quote."],
     ["Call Apex second, commercially. ", "85% of spend; CRES bar 1-2% over PO since Feb; $77k short-shipped balances open."],
-    ["Looking ahead: ", "a backtested watch list for the next 60 days of open orders."],
   ], { x: x2, y: 4.25, w: colW - 0.6, h: 2.4, fontSize: 13 });
-  s.addNotes("Task 1 turns 35 PDFs into 23 things to do, worst first, and 22 lines Lisa never has to look at. Task 2 says call Continental first, with the numbers, and says honestly that part of it is our own planning. The forward view turns history into something planning can act on next week.");
 }
 
 // ------------------------------------------------------------------ heard
@@ -137,7 +133,6 @@ function table(s, header, rows, opts) {
     s.addShape(pres.shapes.ROUNDED_RECTANGLE, { x: x + 0.2, y: 5.6, w: cw - 0.4, h: 1.0, rectRadius: 0.06, fill: { color: C.white }, line: { color: C.line } });
     s.addText([{ text: "Built  ", options: { bold: true, color: C.accent } }, { text: built, options: { bold: true } }], { x: x + 0.35, y: 5.6, w: cw - 0.7, h: 1.0, fontFace: BODY, fontSize: 13, color: C.ink, margin: 0, valign: "middle", isTextBox: true });
   });
-  s.addNotes("I didn't start by asking which technology to use. I started with the buyer's daily decision, the plant's risk, and the smallest reliable workflow that improves both. Design test for everything: could the user act on it tomorrow morning without me in the room?");
 }
 
 // ------------------------------------------------------------------ 3b approach / time split
@@ -162,7 +157,6 @@ function table(s, header, rows, opts) {
     s.addText(d, { x: M + 3.3, y, w: 5.0, h: rh - 0.12, fontFace: BODY, fontSize: 12, color: C.ink, margin: 0, valign: "middle", isTextBox: true });
     s.addText(why, { x: M + 8.55, y, w: W - 2 * M - 8.7, h: rh - 0.12, fontFace: BODY, fontSize: 12, italic: true, color: C.slate, margin: 0, valign: "middle", isTextBox: true });
   });
-  s.addNotes("Say roughly how long each step took you. The point to land: the order was set by risk. Data traps or a broken dropped-line check would sink the work; a plainer UI would not. When something had to give, polish gave, not coverage.");
 }
 
 
@@ -171,10 +165,10 @@ function table(s, header, rows, opts) {
   const s = base("Task 1 · Design choices", "An exception list Lisa opens in Excel, not a dashboard to learn");
   const lw = 7.3;
   const rows = [
-    ["1", "Excel workbook is the product", "Action List first, worst first: what happened and what to do, in words. Lisa types Yes in Done? and adds Notes; the next run reads them back."],
-    ["2", "Same engine as a small browser app", "Drag in the day's PDFs; approve a new vendor part number in one click; see each scan next to what was read from it. Optional."],
-    ["3", "Memory in one local file", "Duplicate PDFs are ignored, corrected acknowledgments close items on their own, the first promise date is kept."],
-    ["4", "Deterministic first", "6 stable vendor layouts, so one small parser each. The AI reader is only a fallback for unknown layouts and is off by default."],
+    ["1", "Excel workbook is the product", "Worst first, in words. Lisa's Done and Notes carry over to tomorrow."],
+    ["2", "Optional browser app, same engine", "Drag in PDFs, approve part numbers in one click, see scans beside what was read."],
+    ["3", "Memory in one local file", "Re-sent PDFs ignored; corrections close items; the first promise is kept."],
+    ["4", "Deterministic first, AI as fallback", "One small parser per layout. Claude reads only what no parser can."],
   ];
   rows.forEach(([k, t, d], i) => {
     const y = 1.75 + i * 1.22;
@@ -186,12 +180,11 @@ function table(s, header, rows, opts) {
   card(s, rx, 1.7, rw, 5.1);
   s.addText("Rules it never breaks", { x: rx + 0.3, y: 1.9, w: rw - 0.6, h: 0.4, fontFace: HEAD, fontSize: 18, bold: true, color: C.ink, margin: 0, isTextBox: true });
   bullets(s, [
-    ["Never guesses silently. ", "Anything not matched on an identifier goes to Review Required."],
-    ["Says \"possible dropped line\", ", "not \"dropped\": the vendor may confirm it separately."],
-    ["Never sends anything. ", "Vendor emails are drafts; Lisa owns the relationship."],
-    ["Every PDF gets a status ", "and every open PO line is accounted for (checked on each run)."],
+    ["Never guesses silently: ", "uncertain matches go to review."],
+    ["\"Possible\" dropped line, ", "not \"dropped\"."],
+    ["Never sends anything: ", "emails are drafts."],
+    ["Every PDF and PO line ", "accounted for, every run."],
   ], { x: rx + 0.3, y: 2.4, w: rw - 0.6, h: 4.2, fontSize: 14 });
-  s.addNotes("Why Excel: Lisa already works from a PO list in Excel and Outlook. A new tool that needs a login and training won't get used. The app exists for the two things Excel is bad at: dragging PDFs in and one-click approval of part numbers. Both read and write the same memory file, so they always agree.");
 }
 
 
@@ -199,7 +192,7 @@ function table(s, header, rows, opts) {
 {
   const s = base("Task 1 · How it works", "Five deterministic steps from vendor PDF to Excel");
   const steps = [
-    ["Read", "Text layer: 31 PDFs\nOCR: 4 Continental scans\nAI fallback: off"],
+    ["Read", "Text layer: 31 PDFs\nOCR: 4 Continental scans\nClaude: optional fallback"],
     ["Normalize", "Dates, units, decimals\nGerman labels, \"KW 20-22\"\nEUR→USD at ERP rate"],
     ["Match", "Vendor, PO, then each line via the 5-level ladder below"],
     ["Check", "Missing line · qty\nprice · date vs need\ndate sanity · revisions"],
@@ -222,7 +215,6 @@ function table(s, header, rows, opts) {
     ["L4", "Only qty + price (+ line number) agree on this PO", conf("MEDIUM", C.amber), "Matched for the checks, but sent to Review Required"],
     ["L5", "Nothing agrees", conf("UNMATCHED", C.red), "Shown as unmatched; never guessed"],
   ], { t: { x: M, y: 4.4, w: W - 2 * M, colW: [0.8, 5.0, 1.6, 4.73], rowH: 0.4 }, size: 12 });
-  s.addNotes("Tolerances were chosen from the data, not invented. USD prices: any change is flagged, because ERP prices are exact to 4 decimals. EUR prices: flagged over 1%, because month-to-month FX noise in the ERP rates is about 0.3%. On this data every L4 inference was an exact qty and price match, but it still goes to review because two lines could share both.");
 }
 
 
@@ -245,7 +237,6 @@ function table(s, header, rows, opts) {
     ["Audit", "All PO Lines · Documents · Review Required · Run Summary"], ["From the ERP", "Old Open Balances ($128k to chase or close)"]];
   s.addText(tabs.map(([k, v], i) => [{ text: k + "\n", options: { bold: true, color: C.accent, fontSize: 11 } }, { text: v, options: { breakLine: i < tabs.length - 1, fontSize: 12 } }]).flat(),
     { x: rx + 0.25, y: 2.3, w: rw - 0.5, h: 4.4, fontFace: BODY, color: C.ink, paraSpaceAfter: 5, valign: "top", margin: 0, isTextBox: true });
-  s.addNotes("Why Excel: it is where Lisa already works, it needs no login or training, and her edits flow back into the tool. The small browser app is optional, for drag-and-drop and one-click approvals; it shares the same memory.");
 }
 
 // ------------------------------------------------------------------ 6 what it caught
@@ -270,7 +261,6 @@ function table(s, header, rows, opts) {
   stat(s, rx + 0.25, 2.95, rw - 0.5, "22", "lines fully clean: never shown on the Action List", C.green, 28);
   stat(s, rx + 0.25, 4.1, rw - 0.5, "11", "items on Review Required (incl. OCR'd scans)", C.amber, 28);
   s.addText("Built-in checks, every run:\n✓ every PDF has a status\n✓ every open PO line accounted for\n✓ revision superseded original (QuickShip)", { x: rx + 0.25, y: 5.5, w: rw - 0.5, h: 1.15, fontFace: BODY, fontSize: 11, color: C.slate, margin: 0, valign: "top", isTextBox: true });
-  s.addNotes("The dropped line is the headline: it's the thing Lisa said matters most and the hardest to see, because it's an absence. The tool knows it's missing because it starts from the open PO list, not from the PDF. The stray PO shows the same idea in reverse. 13 'check' items are mostly date sanity: acknowledgments dated before the PO, or Continental promise dates before the confirmation date.");
 }
 
 
@@ -306,7 +296,6 @@ function table(s, header, rows, opts) {
   s.addText("Continental returns its pack: MRP plans 19 days, their standard is 28", { x: rx, y: y2, w: rw, h: 0.3, fontFace: BODY, fontSize: 12, bold: true, color: C.ink, margin: 0, isTextBox: true });
   s.addImage({ path: A("pack_gaps_c.png"), x: rx, y: y2 + 0.35, w: rw, h: h2, shadow: { type: "outer", blur: 6, offset: 2, angle: 90, color: "000000", opacity: 0.25 } });
   s.addText("Vendor replies in the demo are synthetic. Plain Excel: no portal, no logins; PDFs keep working for everyone else.", { x: rx, y: 6.55, w: rw, h: 0.4, fontFace: BODY, fontSize: 11, italic: true, color: C.muted, margin: 0, isTextBox: true });
-  s.addNotes("This is the answer to past vs future. The past: the ERP tells us every part each vendor supplies, what we paid, and the real lead times; it pre-fills both forms and gives Lisa a list of $128k of old open balances to chase or short-close. The future: the vendor answers in our format, so the three hardest problems (dropped lines, week-range dates, vendor part numbers) are prevented rather than detected. Roll out to the three vendors that cost the most reading time first: Continental's scans, Ostmark's German week ranges, Heritage's part numbers.");
 }
 
 
@@ -331,7 +320,6 @@ function table(s, header, rows, opts) {
     valAxisMinVal: 0, valAxisMaxVal: 33,
   });
   s.addText("The naive answers are wrong by +$1.3M and -$2.9M. Every number in the readout says which records it counts (Definitions tab).", { x: M + 6.9, y: 6.0, w: W - 2 * M - 6.9, h: 0.8, fontFace: BODY, fontSize: 13, italic: true, color: C.slate, margin: 0, isTextBox: true });
-  s.addNotes("Each trap was verified independently. The date format one is sneaky: a SQL-only analysis silently returns nothing by month. Received value = net receipt qty times PO unit price. Receipts carry no price, so this is value at PO price, not invoiced cost; I say that on the readout.");
 }
 
 
@@ -377,7 +365,6 @@ function table(s, header, rows, opts) {
     { text: "Trend ", options: { bold: true } }, { text: "= Fisher exact test; no vendor's change is statistically significant (Liberty p=0.13). ", options: {} },
     { text: "Not ranked: ", options: { bold: true } }, { text: "QC holds (dates unreliable). No composite score: the weights would be invented.", options: {} },
   ], { x: M, y: 5.5, w: W - 2 * M, h: 1.2, fontFace: BODY, fontSize: 12, color: C.slate, margin: 0, valign: "top", isTextBox: true });
-  s.addNotes("I deliberately did not build a 0-100 vendor score. Any weighting of lateness vs price vs shortage would be my opinion dressed up as math. Instead, the table shows absolute and relative numbers side by side, with the denominators.");
 }
 
 
@@ -406,7 +393,6 @@ function table(s, header, rows, opts) {
     catAxisLabelColor: C.ink, catAxisLabelFontSize: 12, catAxisOrientation: "maxMin", valAxisHidden: true, valAxisMaxVal: 110, valAxisMinVal: 0,
     valGridLine: { style: "none" }, catGridLine: { style: "none" }, showLegend: false,
   });
-  s.addNotes("Questions for the call: can you commit to a standard lead time we can load into MRP? When you confirm a date you meet it 58% of the time; what drives the misses: furnace capacity, batching, or late incoming parts from us? 51% of lines arrive split; can partial lots be avoided or flagged? Language is deliberate: highest observed delivery exposure, not 'caused production delays'. The ERP has no production-impact data.");
 }
 
 
@@ -428,7 +414,22 @@ function table(s, header, rows, opts) {
   const rx = M + 2 * sw + 0.2, rw = W - M - rx, ih = rw * 914 / 960;
   const h = Math.min(ih, 5.25), w = h * 960 / 914;
   s.addImage({ path: A("readout_lookahead.png"), x: rx + (rw - w) / 2, y: 1.6, w, h, shadow: { type: "outer", blur: 6, offset: 2, angle: 90, color: "000000", opacity: 0.25 } });
-  s.addNotes("This is what turns a history lesson into something planning can act on next week. The biggest item is not a late vendor: it's $1.84M of Apex bar due in two weeks with no acknowledgment on file. Part of that may be the ERP confirmation feed stopping on 04/03, which is itself a question for IT. I backtested the rule before trusting it, and I say plainly that it's a watch list.");
+}
+
+// ------------------------------------------------------------------ ai
+{
+  const s = base("AI · where it earns its place", "Claude reads and explains; it never decides or calculates");
+  const cw = (W - 2 * M - 0.4) / 2;
+  [[M, "TASK 1 · AI READER", "Reads any PDF no template can", [["125 / 125", "qty, price and date fields matched the parsers on all 35 PDFs"], ["44 / 44", "lines identical to the OCR run with no Tesseract installed"]]],
+   [M + cw + 0.4, "TASK 2 · VENDOR Q&A", "Grounded, plain-English answers", [["100%", "of quoted figures verified against an independent recomputation"], ["0", "causal claims: it said downtime is not in the data"]]]].forEach(([x, k, t, stats]) => {
+    card(s, x, 1.6, cw, 2.55);
+    s.addText(k, { x: x + 0.3, y: 1.75, w: cw - 0.6, h: 0.3, fontFace: BODY, fontSize: 11, bold: true, color: C.accent, charSpacing: 2, margin: 0, isTextBox: true });
+    s.addText(t, { x: x + 0.3, y: 2.05, w: cw - 0.6, h: 0.4, fontFace: HEAD, fontSize: 17, bold: true, color: C.ink, margin: 0, isTextBox: true });
+    stats.forEach(([big, lab], i) => stat(s, x + 0.3 + i * (cw - 0.6) / 2, 2.6, (cw - 0.6) / 2, big, lab, C.green, 26));
+  });
+  const ih = 1.95, iw = ih * 1270 / 255;
+  s.addImage({ path: A("ai_chat.png"), x: (W - iw) / 2, y: 4.4, w: iw, h: ih, shadow: { type: "outer", blur: 6, offset: 2, angle: 90, color: "000000", opacity: 0.2 } });
+  s.addText("Sees only cleaned tables · quotes every figure · totals precomputed · AI-read items go to review · off without a key", { x: M, y: 4.5 + ih, w: W - 2 * M, h: 0.35, fontFace: BODY, fontSize: 12, italic: true, color: C.slate, margin: 0, isTextBox: true });
 }
 
 // ------------------------------------------------------------------ 14 part-number cleanup
@@ -463,7 +464,7 @@ function table(s, header, rows, opts) {
   const items = [
     ["ERP integration or write-back", "No API access, and a wrong write is expensive. The CSV export is the contract; integration comes after trust."],
     ["Auto-emailing vendors", "The tool drafts emails; Lisa sends them. Vendor relationships are hers."],
-    ["LLM-first extraction", "6 stable layouts parse deterministically and auditably. The AI reader is a fallback, off by default."],
+    ["LLM-first extraction", "6 stable layouts parse deterministically and auditably. Claude is the tested fallback, not the default."],
     ["Full master-data (MDM) platform", "The crosswalk file, with source, confidence and review status, is the seed. The platform comes later."],
     ["A 0-100 vendor score", "The weights would be invented. An evidence table with denominators is more honest."],
     ["A chatbot or a big web app", "Lisa needs a morning action queue, not another interface. Excel is where she works; the small app is optional."],
@@ -484,16 +485,13 @@ function table(s, header, rows, opts) {
 {
   const s = base("Limits", "Where this falls over, and what catches it when it does");
   table(s, ["Failure mode", "What happens today", "Mitigation / next step"], [
-    [{ text: "A new vendor or a changed layout", options: { bold: true } }, "No parser matches; the PDF shows as unreadable", "Beacon's acknowledgment form removes the layout problem; meanwhile manual form or AI reader (off by default)"],
-    [{ text: "Vendors don't use the form", options: { bold: true } }, "They keep sending their own PDFs", "PDFs keep working; start with the 3 vendors that cost the most reading time"],
+    [{ text: "A new vendor or a changed layout", options: { bold: true } }, "No parser matches; the PDF shows as unreadable", "Claude reads it (tested: 125/125 fields); Beacon's form removes the problem"],
     [{ text: "A poor scan", options: { bold: true } }, "OCR can misread a digit", "Every OCR'd doc goes to Needs your OK, shown next to the image"],
     [{ text: "Two PO lines with the same qty and price", options: { bold: true } }, "An L4 inference could pair the wrong lines", "L4 is never HIGH; always goes to review"],
     [{ text: "A stale open-PO CSV", options: { bold: true } }, "False \"PO not open\" or \"possible dropped line\"", "Pull the export each morning; show its as-of date"],
-    [{ text: "FX and price tolerance", options: { bold: true } }, "EUR checked at the ERP monthly rate, 1% band", "Confirm with Lisa and AP what counts as a real difference"],
     [{ text: "Task 2: value at PO price", options: { bold: true } }, "Not invoiced cost; no AP data in the extract", "Add invoice lines, then true price variance"],
-    [{ text: "Task 2: the confirmation feed ends 04/03", options: { bold: true } }, "Promise metrics use POs to 03/30 only", "Ask why the feed stopped"],
     [{ text: "Task 2: no production-impact data", options: { bold: true } }, "Can rank exposure, but can't prove cost", "Link to expedites and downtime; no causal claims until then"],
-  ], { t: { x: M, y: 1.55, w: W - 2 * M, colW: [3.4, 4.1, 4.63], rowH: 0.52 }, size: 12, hsize: 13 });
+  ], { t: { x: M, y: 1.7, w: W - 2 * M, colW: [3.4, 4.1, 4.63], rowH: 0.66 }, size: 13, hsize: 13 });
 }
 
 
@@ -503,22 +501,18 @@ function table(s, header, rows, opts) {
   const colW = (W - 2 * M - 0.4) / 2;
   const qs = [
     ["LISA", [
-      "When a line is missing from an acknowledgment, what do you do today, and how often was it really dropped vs. confirmed later?",
-      "Which miss cost you most last quarter: a short, a price or a date? That sets the priority order.",
-      "Apex CRES bar confirmed +1-2% since Feb while POs stayed $3.92: a negotiated alloy surcharge that never reached the PO?",
-      "What price difference do you let through without a call? Is 1% right for EUR? Is it different for services?",
-      "Who approves a new vendor part number: you or engineering? Do vendors warn you before renumbering?",
-      "Which date is authoritative when they disagree: our required date, the vendor's promise, or the MRP need date?",
-      "What would you need to see for two weeks before you stop opening every PDF yourself?",
+      "How often is a missing line really dropped, vs. confirmed later?",
+      "Which miss costs most: a short, a price or a date?",
+      "Apex CRES bar +1-2% since Feb: a surcharge that never reached the PO?",
+      "Which date rules: our required date, the promise, or MRP need?",
+      "What would you need to see before you stop opening every PDF?",
     ]],
     ["PLANT MANAGER", [
-      "What does a late heat-treat lot actually cost: downtime, overtime, a customer expedite? That turns on-time % into dollars.",
-      "Who set the 19-day heat-treat lead time in MRP? Continental quotes 28.",
-      "Is Continental the only qualified (e.g. Nadcap) heat treater for these parts, or is there a second source?",
-      "Is Apex at 85% of spend a deliberate single-source decision? Is there a contract price for CRES bar?",
-      "Should months-old short-ship balances be closed? Who can short-close a PO?",
-      "Which parts are single-sourced or on customer-critical programs? That turns lateness into risk.",
-      "Which decision should this readout drive: re-source, renegotiate or re-plan? How often: monthly?",
+      "What does a late heat-treat lot cost: downtime, overtime, an expedite?",
+      "Who set the 19-day heat-treat lead time? Continental quotes 28.",
+      "Is there a second qualified (Nadcap) heat treater?",
+      "Is Apex at 85% of spend a deliberate single source?",
+      "Which decision should this drive: re-source, renegotiate or re-plan?",
     ]],
   ];
   qs.forEach(([who, list], c) => {
@@ -526,7 +520,7 @@ function table(s, header, rows, opts) {
     card(s, x, 1.6, colW, 5.25);
     s.addText(who, { x: x + 0.3, y: 1.75, w: colW - 0.6, h: 0.3, fontFace: BODY, fontSize: 12, bold: true, color: C.accent, charSpacing: 2, margin: 0, isTextBox: true });
     s.addText(list.map((q, i) => ({ text: q, options: { bullet: { type: "number" }, breakLine: i < list.length - 1 } })), {
-      x: x + 0.3, y: 2.1, w: colW - 0.6, h: 4.65, fontFace: BODY, fontSize: 12.5, color: C.ink, paraSpaceAfter: 5, valign: "top", margin: 0.03, isTextBox: true,
+      x: x + 0.3, y: 2.1, w: colW - 0.6, h: 4.65, fontFace: BODY, fontSize: 16, color: C.ink, paraSpaceAfter: 14, valign: "top", margin: 0.03, isTextBox: true,
     });
   });
 }
@@ -540,11 +534,9 @@ function table(s, header, rows, opts) {
   bullets(s, [
     ["Invoice / AP lines: ", "actual price paid, and therefore true price variance"],
     ["Production impact: ", "downtime, expedites, late customer shipments"],
-    ["Quality / NCR data ", "with dates we can trust (qc_hold dates can't be)"],
     ["The full vendor master: ", "6 vendors in the files vs ~30 active suppliers"],
     ["PO change and cancel history, ", "and the confirmation feed after 04/03"],
     ["Supplier agreements: ", "lead-time commitments, surcharge clauses, strategic status"],
-    ["The MRP lead-time master ", "and who changes it"],
   ], { x: M, y: 2.05, w: lw, h: 4.7, fontSize: 14 });
   const rx = M + lw + 0.4, rw = W - M - rx;
   const steps = [
@@ -559,7 +551,6 @@ function table(s, header, rows, opts) {
     s.addText(t, { x: rx + 0.25, y: y + 0.12, w: 1.3, h: 0.4, fontFace: HEAD, fontSize: 14, bold: true, color: C.accent, margin: 0, isTextBox: true });
     s.addText(d, { x: rx + 1.55, y: y + 0.1, w: rw - 1.75, h: 0.95, fontFace: BODY, fontSize: 13, color: C.ink, margin: 0, valign: "middle", isTextBox: true });
   });
-  s.addNotes("Success metric for week 1: Lisa's reconciliation time drops from about 90 minutes, and the tool misses nothing she catches by hand. False alarms are acceptable at first; misses are not.");
 }
 
 
@@ -604,7 +595,6 @@ function table(s, header, rows, opts) {
     s.addText(t, { x: rx + 0.55, y: y + 0.1, w: rw - 0.75, h: 0.38, fontFace: BODY, fontSize: 14, bold: true, color: C.ink, margin: 0, isTextBox: true });
     s.addText(d, { x: rx + 0.55, y: y + 0.46, w: rw - 0.75, h: 0.65, fontFace: BODY, fontSize: 12, color: C.slate, margin: 0, valign: "top", isTextBox: true });
   });
-  s.addNotes("Why Apex isn't first: its delivery is fine. The issue is commercial and cumulative, and the right person is probably Lisa plus whoever owns the supply agreement. The price creep may be a legitimate alloy surcharge that never made it into the PO price; that's a question, not an accusation.");
 }
 
 
@@ -624,8 +614,7 @@ function table(s, header, rows, opts) {
   s.addText("Why keep the first promise", { x: rx + 0.3, y: 1.9, w: rw - 0.6, h: 0.4, fontFace: HEAD, fontSize: 17, bold: true, color: C.ink, margin: 0, isTextBox: true });
   s.addText("If every revised date overwrites the last one, every PO ends up looking on time and vendor performance can't be measured. The same trap is in the ERP: 30 confirmations were superseded.", { x: rx + 0.3, y: 2.75, w: rw - 0.6, h: 1.4, fontFace: BODY, fontSize: 13, color: C.slate, margin: 0, valign: "top", isTextBox: true });
   s.addText("Tested", { x: rx + 0.3, y: 4.2, w: rw - 0.6, h: 0.35, fontFace: HEAD, fontSize: 17, bold: true, color: C.ink, margin: 0, isTextBox: true });
-  s.addText("59 automated tests. TestDayTwo runs day 1 on the real PDFs, applies Lisa's Excel edits, then feeds a revised vendor PDF on day 2 and checks each row above.", { x: rx + 0.3, y: 4.6, w: rw - 0.6, h: 1.9, fontFace: BODY, fontSize: 13, color: C.slate, margin: 0, valign: "top", isTextBox: true });
-  s.addNotes("This is the answer to 'is it a one-time script?'. The store is one SQLite file: items, notes, append-only promise history, crosswalk approvals and file hashes. The Excel and the app read and write the same store.");
+  s.addText("70 automated tests. TestDayTwo runs day 1 on the real PDFs, applies Lisa's Excel edits, then feeds a revised vendor PDF on day 2 and checks each row above.", { x: rx + 0.3, y: 4.6, w: rw - 0.6, h: 1.9, fontFace: BODY, fontSize: 13, color: C.slate, margin: 0, valign: "top", isTextBox: true });
 }
 
 
@@ -641,7 +630,6 @@ function table(s, header, rows, opts) {
   const h3 = rw * 530 / 1630;
   s.addImage({ path: A("review_ocr_c.png"), x: rx, y: 2.9 + h2, w: rw, h: h3, shadow: { type: "outer", blur: 6, offset: 2, angle: 90, color: "000000", opacity: 0.25 } });
   s.addText("Scans are shown next to what OCR read, so checking takes seconds, not retyping.", { x: rx, y: 3.0 + h2 + h3, w: rw, h: 0.6, fontFace: BODY, fontSize: 12, color: C.slate, margin: 0, valign: "top", isTextBox: true });
-  s.addNotes("Live demo here if time allows: open the app, click 'Load this week's sample confirmations', tick one Done, approve one part number, then Download Excel and show the same state in the workbook.");
 }
 
 

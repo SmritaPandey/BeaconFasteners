@@ -17,6 +17,7 @@ import argparse
 import csv
 import glob
 import hashlib
+import json
 import os
 import pathlib
 import re
@@ -133,7 +134,12 @@ def mark_duplicates(docs):
     ignored after the first copy so it can't double-count a split delivery."""
     seen = {}
     for d in docs:
-        h = hashlib.sha1(re.sub(r"\s+", " ", d.get("raw_text", "")).encode()).hexdigest()
+        text = re.sub(r"\s+", " ", d.get("raw_text") or "").strip()
+        if not text:   # read by AI or typed in by hand (no text layer): compare what was read instead
+            text = json.dumps([d.get("vendor_id"), d.get("po_number"), str(d.get("doc_date")), d.get("vendor_ref"),
+                               [[l.get("line_no"), l.get("vendor_pn"), l.get("qty"), l.get("unit_price"), str(l.get("promise_date"))]
+                                for l in d.get("lines", [])]], default=str)
+        h = hashlib.sha1(text.encode()).hexdigest()
         if h in seen:
             d["duplicate_of"] = seen[h]
         else:

@@ -11,6 +11,15 @@ Tinicum FDE super-day case. The goal was not to "extract data from PDFs": it was
 
 ---
 
+## Two ways to run the same tool
+
+| Mode | How | What it shows |
+|---|---|---|
+| **Without AI (default)** | `./run_all.sh /data` | Template parsers + OCR + deterministic analytics. Every number is traceable, and nothing leaves the building. |
+| **With Claude (optional)** | `export ANTHROPIC_API_KEY=...`, then `recon.py --ai` and `task2_vendor_readout/ask.py "question"` | Claude reads PDFs no template can, and answers the plant manager's questions from the computed tables. Tested live, with results in `output/ai_evidence/` (section 6b). |
+
+The deliverables and the numbers are identical in both modes. AI only adds coverage (new layouts, no OCR installed) and a way to ask questions.
+
 ## 1. Run it (graders)
 
 **One command** (macOS/Linux). It checks prerequisites, installs into a local `.venv`, runs both tasks, generates the vendor forms and runs all tests:
@@ -41,11 +50,11 @@ python3 recon.py --confirmations /data/confirmations --pos /data/open_pos.csv \
                  --vendors /data/vendor_master.csv --erp /data/beacon_erp.db --out ../output
 python3 vendor_forms.py ack     --pos /data/open_pos.csv --vendors /data/vendor_master.csv --erp /data/beacon_erp.db --out ../output/vendor_forms/acknowledgment_forms
 python3 vendor_forms.py onboard --pos /data/open_pos.csv --vendors /data/vendor_master.csv --erp /data/beacon_erp.db --out ../output/vendor_forms/supplier_packs
-BEACON_DATA=/data python3 -m unittest discover -s tests        # 59 tests
+BEACON_DATA=/data python3 -m unittest discover -s tests        # 61 tests
 
 cd ../task2_vendor_readout
 python3 build_readout.py --erp /data/beacon_erp.db --out ../output
-BEACON_DATA=/data python3 -m unittest discover -s tests        # 8 tests
+BEACON_DATA=/data python3 -m unittest discover -s tests        # 9 tests
 ```
 </details>
 
@@ -195,12 +204,30 @@ Vendor part numbers are a **master-data problem**, not an OCR problem. The cross
 - Automatic vendor emails (drafts only).
 - LLM-first extraction.
 - A master-data platform.
-- A generic chatbot.
+- A generic chatbot (the Q&A is scoped to the readout data and quotes its figures).
 - A vendor portal.
 - Cloud hosting.
 - Causal claims from 8 months of data.
 
-**AI:** `ai_reader.py` can read an unknown layout with Claude into a strict JSON schema, validated by the same rules. It is **off** unless `BEACON_AI_FALLBACK=1` and `ANTHROPIC_API_KEY` are set, because aerospace paperwork can be export-controlled and all 35 PDFs parse deterministically. It was not used to produce any output here.
+## 6b. Where AI is used (optional, tested live)
+
+Every number in the deliverables is computed deterministically. **Claude is used in exactly two places.** Both are optional and run only when `ANTHROPIC_API_KEY` is set. Neither decides anything on its own. Evidence is in `output/ai_evidence/`.
+
+| Where | What Claude does | Guardrails | Live result on the case data |
+|---|---|---|---|
+| **Task 1: AI reader** (`recon.py --ai`, or the Desk *Settings* switch) | Reads a PDF no template can: a new vendor layout, a scan when Tesseract is missing, another language | Strict JSON schema; the same validation and PO checks as the parsers; everything it reads goes to *Needs your OK* | Agreed with the parsers on **125 / 125** qty/price/date fields across all 35 PDFs; the full check without OCR matched the OCR run on **44 / 44** lines |
+| **Task 2: vendor Q&A** (`task2_vendor_readout/ask.py "question"`, or *Vendor history → Ask* in the Desk) | Answers the plant manager in plain English | Sees only the cleaned, computed readout tables, never the raw ERP; must quote each figure and its table; no causal claims; no arithmetic of its own (totals are precomputed) | Every quoted figure was verified against an independent recomputation; it refused to claim downtime the data can't show |
+
+```bash
+export ANTHROPIC_API_KEY=...        # your own key; never stored in any file
+python3 task2_vendor_readout/ask.py --erp /data/beacon_erp.db "Which open orders are at risk in the next two weeks?"
+python3 task1_confirmation_recon/ai_reader.py --benchmark /data/confirmations --vendors /data/vendor_master.csv
+```
+
+- **Why AI isn't the primary reader:** aerospace paperwork can be export-controlled, so sending PDFs to a cloud API is IT's decision. The deterministic parsers also make every value traceable.
+- **Why no vector database:** the computed tables fit in one cached prompt (about 32k tokens). The Q&A is retrieval-grounded; similarity search would only add a way to miss the right row.
+- **Requirements:** the Claude SDK needs Python 3.10+. On 3.9 everything else runs.
+- **Cost:** a question costs cents, because the data block is prompt-cached after the first question. The 35-PDF benchmark costs about $1–2.
 
 ## 7. Known limitations
 
@@ -217,7 +244,7 @@ Vendor part numbers are a **master-data problem**, not an OCR problem. The cross
 ```
 run_all.sh / run_all.bat     one-command run for graders
 task1_confirmation_recon/    parsers · recon · workflow · store · report · vendor_forms · desk_app · ai_reader · tests/ · launchers
-task2_vendor_readout/        analysis (cleaning + metrics) · forward_risk (watch list + backtest) · build_readout (xlsx/html/pdf) · tests/
+task2_vendor_readout/        analysis (cleaning + metrics) · forward_risk (watch list + backtest) · build_readout (xlsx/html/pdf) · ask (optional Q&A) · tests/
 output/                      generated from the case data
 presentation/                deck (build_deck.js regenerates it) and screenshots
 ```

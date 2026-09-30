@@ -58,6 +58,16 @@ class TestOnCaseData(unittest.TestCase):
         self.assertEqual((bt["severe_caught"], bt["severe"]), (59, 63))
         self.assertGreater(bt["precision"], bt["base_rate"])
 
+    def test_ai_context_has_precomputed_totals_and_no_raw_erp(self):
+        # The Q&A model must quote totals, never add them up, and must only see cleaned tables (no API call here)
+        import json
+        import ask
+        ctx = json.loads(ask.build_context(ERP))
+        seven = [r for r in ctx["open_orders_summary"] if r["due_within_days"] == 7 and r["vendor"] == "ALL"]
+        self.assertEqual(len(seven), 1)
+        self.assertNotIn("receipt_txn", json.dumps(list(ctx)))
+        self.assertAlmostEqual(ctx["received_value_by_month_usd"]["2026-01"]["Total"], 5091552.47, places=2)
+
     def test_forward_book(self):
         fw = fr.forward_book(self.a)          # ERP promises only
         self.assertEqual(len(fw), 80)

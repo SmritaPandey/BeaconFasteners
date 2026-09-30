@@ -1,0 +1,127 @@
+====================================================================================================
+Q: Which vendor should I call first, and why?
+# Call Continental Quality Heat Treat first
+
+Continental is the worst performer on every delivery measure, and it already has live problems: two open lines flagged HIGH risk and three lines where nothing has arrived.
+
+**Track record (scorecard)**
+- On-time is 42% (56 of 134 due lines). The next worst is Ostmark at 69%.
+- 61 lines were severely late (more than 7 days), 46% of due lines. The other five vendors have 2 severely late lines between them. Severely late received value is $660,181.
+- When late, Continental averages 15.5 days late (median 17, p90 24, max 28).
+- It promised dates after our required date on 91% of confirmed lines, by an average of 8.5 days. It then met its own promise only 58% of the time.
+- Median lead times are 19 days allowed, 28 days quoted and 24.5 days actual.
+- It has not improved. On-time by required month was 22% in May 2026 (on_time_by_required_month), and the Sep–Dec vs Jan–May comparison shows no significant change (trend_p 0.598).
+- All three services perform poorly (continental_by_service): HT-SOLN 33%, HT-PRECIP 40%, HT-STRESS 53%.
+
+**What's open now**
+- **PO-4500050022 (HT-PRECIP):** required May 21. This week's acknowledgment promises June 11, 21 days late (open_orders_next_60_days: HIGH).
+- **PO-4500050023 (HT-PRECIP):** required May 23. The promise is on time, but this part has been on time only 40% of the last 43 deliveries (HIGH).
+- **Nothing received yet on three lines** (past_due_open_lines):
+  - PO-4500046944 (HT-STRESS, $9,280 open), 2 days past due
+  - PO-4500050024 ($1,085), 8 days past due
+  - PO-4500050025 ($1,085), 10 days past due
+- Total past-due open value is $14,038 across 7 lines (scorecard).
+
+**Caveat on dollars.** Continental is only 5.4% of received value (scorecard: share 0.0535), and its open value is small. The data does not show what these heat-treat lots feed downstream or whether they gate shipments. Check that against your production schedule; this dataset can't show it.
+
+**What to ask on the call**
+- A firm date for the three nothing-received lines.
+- Whether June 11 can be pulled in on PO-4500050022.
+- Why the promises run past our required dates. The data shows we allow about 19 days against roughly 24.5 actual. It does not show why, so it is worth hearing their side, and possibly lengthening the lead time we plan with.
+
+**Next calls, if you have time**
+- **Ostmark:** PO-4500050027 line 1 (TOOL-DIE-9472). $31,000 open, nothing received, 2 days past due. This is the largest single past-due line (past_due_open_lines).
+- **Apex:** about $328,500 open on PO-4500045950 line 1 is due tomorrow with no confirmation on file. Many other large Apex lines also have no confirmation. Apex's record is solid (87% on-time, 0 severe), so this is a quick confirmation call, not an escalation.
+[tokens in 19, cache write 32053, cache read 0, out 1717]
+====================================================================================================
+Q: What was our received value in January 2026, and how much of it came from Apex?
+**Received value in January 2026 was $5,091,552.47. Apex supplied $4,489,089.88 of it, about 88%** (received_value_by_month_usd, 2026-01).
+
+**By vendor, January 2026**
+
+| Vendor | Received value | Share of month |
+|---|---|---|
+| Apex Bar & Tube Co. | $4,489,089.88 | 88.2% |
+| Heritage Cold Heading | $239,418.23 | 4.7% |
+| Ostmark Werkzeug GmbH | $177,711.40 | 3.5% |
+| Continental Quality Heat Treat | $171,053.50 | 3.4% |
+| Liberty Surface Finishing | $12,616.26 | 0.2% |
+| QuickShip Industrial | $1,663.20 | <0.1% |
+| **Total** | **$5,091,552.47** | |
+
+**How to read these figures**
+- This is received value: net receipts (after removing reversed and duplicate receipts) times the PO unit price, grouped by the month of receipt. It is not what was ordered or invoiced (metric_definitions).
+- January was the highest month in the 8-month history. November 2025 was next at $4,785,787.08.
+- Apex's 88% share that month is slightly above its 85% share for the full period (scorecard: share 0.8507).
+[tokens in 1762, cache write 0, cache read 32053, out 596]
+====================================================================================================
+Q: Which open orders are at risk in the next two weeks?
+**Only two open lines due in the next two weeks are flagged HIGH risk. Both are Continental, together $3,000 open.** The bigger exposure in dollars is about $1.73M of Apex lines due by May 31 that have no confirmation on file.
+
+All figures are open value (balance × PO price) from open_orders_next_60_days. "Next two weeks" means due by 2026-05-31.
+
+**1. Flagged HIGH risk**
+
+| PO / line | Vendor | Part | Due | Open value | Why flagged |
+|---|---|---|---|---|---|
+| PO-4500050022 / 1 | Continental | HT-PRECIP | May 21 | $1,200 | Promised Jun 11, 21 days late; part on time 40% of last 43 deliveries |
+| PO-4500050023 / 1 | Continental | HT-PRECIP | May 23 | $1,800 | Promise is on time, but same 40% history; we allowed 21 days vs 26 typical |
+
+The third HIGH line, Heritage PO-4500050012 ($12,900, promised Jun 18 against a Jun 4 need), falls just outside two weeks, at 18 days.
+
+**2. No confirmation on file (tier OK, but unconfirmed)**
+- **Apex: 14 lines, $1,731,953.** The biggest are:
+  - PO-4500045702 L1, $526,500, due May 25
+  - PO-4500045950 L1, $328,500, due tomorrow
+  - PO-4500045668 L1, $176,400, due May 19
+  - Apex's part history is 81–90% on time.
+- **Heritage: 11 lines, $107,209**, due May 18–28. Part history is 66–78% on time, including CHB-5520 at 66% and CHB-7715 at 67%.
+- **Liberty:** PO-4500050019, $2,000, due May 24. We allowed 10 days; this part usually takes 15.
+
+Caveat: the ERP confirmation feed ends 2026-04-03 (data_quality). "None on file" may mean the confirmation never reached ERP, not that the vendor didn't confirm. The data can't tell these apart.
+
+**3. Confirmed on time, but we allowed less than the part usually takes**
+- **Heritage PO-4500050013:** L1 $15,500 and L2 $4,200, due tomorrow. We allowed 28 days vs 32–33 typical.
+- **Apex PO-4500050003:** $5,880. We allowed 21 days vs 39.
+- **Apex PO-4500050002:** $3,920. We allowed 28 days vs 39.
+- **Apex PO-4500050008:** L2 $22,500 and L1 $4,710. We allowed 35 days vs 39–40.
+
+**4. Already past due with nothing received** (past_due_open_lines)
+- Ostmark PO-4500050027: $31,000 + $910
+- Continental PO-4500046944: $9,280
+- Continental PO-4500050024 and -025: $1,085 each
+- Liberty PO-4500046523 ($668) and PO-4500050021 ($200)
+- QuickShip PO-4500050031: $30
+
+**How much to trust the flag** (watch_list_backtest)
+- The flag caught 59 of 63 historically severe-late lines.
+- Only 33% of flagged lines were actually late, against a 22% base rate.
+- 15% of unflagged lines were still late. "OK" means lower risk, not no risk.
+
+**Next step:** Chase confirmations on the Apex lines due May 18–25, about $1.44M. Get a pull-in or recovery date from Continental on PO-4500050022. Check on the Heritage lines due tomorrow.
+[tokens in 2379, cache write 0, cache read 32053, out 2773]
+====================================================================================================
+Q: Did Continental's late deliveries cause any production downtime?
+**I can't answer that from this data.** It covers purchasing and receipts only: no production schedules, work orders, downtime logs or line-stoppage records. The data shows Continental was often late; it does not show whether that stopped production.
+
+**What the data does show about Continental's lateness** (scorecard)
+- 78 of 134 due lines were late (on-time 42%).
+- 61 lines were more than 7 days late. Received value on those severely late lines was $660,181.
+- Late lines averaged 15.5 days late (median 17, max 28).
+- By service (continental_by_service), on-time was HT-SOLN 33%, HT-PRECIP 40% and HT-STRESS 53%.
+
+**What it doesn't show**
+- Whether safety stock, expediting or rescheduling absorbed the lateness.
+- Whether any late lot held up a work order or a customer shipment.
+- What each heat-treat lot feeds downstream.
+
+The MRP messages table was set aside because it reflects Beacon demand changes, not vendor performance (data_quality). It doesn't record downtime either.
+
+**Data needed to answer it**
+1. **Downtime or line-stoppage log**, with dates, work centers and reason codes, especially "waiting on heat treat."
+2. **Work orders** linked to the Continental PO lines or lots, with planned and actual start dates.
+3. **Customer shipment history** (planned vs actual ship dates) for parts routed through Continental.
+4. **Inventory history** for the parts involved, to see whether stock covered the gaps.
+
+**Suggested next step:** Ask production planning whether a downtime log with reason codes exists. With that and the work-order routing, the 61 severely late Continental lines could be matched to any stoppages in the same windows.
+[tokens in 5175, cache write 0, cache read 32053, out 598]

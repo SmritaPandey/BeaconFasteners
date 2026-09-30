@@ -407,16 +407,18 @@ def page_history(store, last):
     if "advisor" not in st.session_state:
         sys.path.insert(0, os.path.join(HERE, "..", "task2_vendor_readout"))
         import ask
+        lines_csv = os.path.join(EXPORTS, "confirmation_lines.csv")
+        recon.write_extracted_csv(lines_csv, last["extracted"])   # this week's promises feed the open-orders view
         with st.spinner("Loading the vendor data..."):
-            st.session_state["advisor"] = ask.Advisor(P_ERP, os.path.join(EXPORTS, "confirmation_lines.csv")
-                                                      if os.path.exists(os.path.join(EXPORTS, "confirmation_lines.csv")) else None)
+            st.session_state["advisor"] = ask.Advisor(P_ERP, lines_csv)
         st.session_state["chat"] = []
+    md = lambda t: t.replace("$", "\\$")   # '$...$' would otherwise render as a math formula
     for role, text in st.session_state["chat"]:
-        st.chat_message(role).markdown(text)
+        st.chat_message(role).markdown(md(text))
     q = st.chat_input("e.g. Why should I call Continental first? What is at risk in the next two weeks?")
     if q:
         import anthropic
-        st.chat_message("user").markdown(q)
+        st.chat_message("user").markdown(md(q))
         try:
             with st.spinner("Thinking..."):
                 a = st.session_state["advisor"].ask(q)
@@ -424,7 +426,7 @@ def page_history(store, last):
             a = "Claude API error %s: %s" % (e.status_code, e.message)
         except anthropic.APIConnectionError:
             a = "Could not reach the Claude API."
-        st.chat_message("assistant").markdown(a)
+        st.chat_message("assistant").markdown(md(a))
         st.session_state["chat"] += [("user", q), ("assistant", a)]
 
 

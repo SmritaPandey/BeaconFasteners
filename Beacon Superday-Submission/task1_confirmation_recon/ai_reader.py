@@ -76,6 +76,19 @@ def _date(s):
         return None
 
 
+def _vague(printed, iso):
+    """True when the printed promise is NOT simply the same date in another format (e.g. 'KW 20-22', 'end of May')."""
+    printed = (printed or "").strip()
+    if not printed:
+        return False
+    for fmt in ("%Y-%m-%d", "%m/%d/%Y", "%m/%d/%y", "%d.%m.%Y", "%d.%m.%y"):
+        try:
+            return datetime.strptime(printed, fmt).date() != _date(iso)
+        except ValueError:
+            pass
+    return True
+
+
 def to_doc(data, vendors):
     """Map the model's JSON onto the parser's normalized doc shape."""
     vid = None
@@ -92,7 +105,7 @@ def to_doc(data, vendors):
                           qty=float(l["qty"]), uom=None, unit_price=None if l["unit_price"] < 0 else float(l["unit_price"]),
                           currency=(l["currency"] or "USD").upper(), promise_date=_date(l["promise_date"]),
                           promise_note=("AI read the date '%s' as %s" % (l["promise_text"], l["promise_date"]))
-                          if l["promise_text"] and l["promise_text"] != l["promise_date"] else None))
+                          if _vague(l["promise_text"], l["promise_date"]) else None))
     warnings = ["Read by AI (no template for this layout) - check every value against the PDF."]
     if data.get("notes"):
         warnings.append("AI note: " + data["notes"])

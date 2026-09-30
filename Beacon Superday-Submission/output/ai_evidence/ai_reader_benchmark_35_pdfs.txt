@@ -1,0 +1,37 @@
+apex_01.pdf              text  AI ok   PO ok  lines 1/1  fields 3/3 
+apex_02.pdf              text  AI ok   PO ok  lines 1/1  fields 3/3 
+apex_03.pdf              text  AI ok   PO ok  lines 1/1  fields 3/3 
+apex_04.pdf              text  AI ok   PO ok  lines 2/2  fields 6/6 
+apex_05.pdf              text  AI ok   PO ok  lines 1/1  fields 3/3 
+apex_06.pdf              text  AI ok   PO ok  lines 1/1  fields 3/3 
+apex_07.pdf              text  AI ok   PO ok  lines 1/1  fields 3/3 
+apex_08.pdf              text  AI ok   PO ok  lines 1/1  fields 3/3 
+apex_rogue.pdf           text  AI ok   PO ok  lines 1/1  fields 3/3 
+continental_01.pdf       ocr   AI ok   PO ok  lines 1/1  fields 2/2 
+continental_02.pdf       ocr   AI ok   PO ok  lines 1/1  fields 2/2 
+continental_03.pdf       ocr   AI ok   PO ok  lines 1/1  fields 2/2 
+continental_04.pdf       ocr   AI ok   PO ok  lines 1/1  fields 2/2 
+heritage_01.pdf          text  AI ok   PO ok  lines 1/1  fields 3/3 
+heritage_02.pdf          text  AI ok   PO ok  lines 3/3  fields 9/9 
+heritage_03.pdf          text  AI ok   PO ok  lines 2/2  fields 6/6 
+heritage_04.pdf          text  AI ok   PO ok  lines 1/1  fields 3/3 
+heritage_05.pdf          text  AI ok   PO ok  lines 3/3  fields 9/9 
+heritage_06.pdf          text  AI ok   PO ok  lines 1/1  fields 3/3 
+heritage_07.pdf          text  AI ok   PO ok  lines 3/3  fields 9/9 
+liberty_01.pdf           text  AI ok   PO ok  lines 1/1  fields 2/2 
+liberty_02.pdf           text  AI ok   PO ok  lines 1/1  fields 2/2 
+liberty_03.pdf           text  AI ok   PO ok  lines 0/0  fields 0/0 
+liberty_04.pdf           text  AI ok   PO ok  lines 1/1  fields 2/2 
+liberty_05.pdf           text  AI ok   PO ok  lines 1/1  fields 2/2 
+liberty_06.pdf           text  AI ok   PO ok  lines 1/1  fields 2/2 
+liberty_07.pdf           text  AI ok   PO ok  lines 1/1  fields 2/2 
+ostmark_01.pdf           text  AI ok   PO ok  lines 2/2  fields 6/6 
+ostmark_02.pdf           text  AI ok   PO ok  lines 2/2  fields 6/6 
+ostmark_03.pdf           text  AI ok   PO ok  lines 1/1  fields 3/3 
+ostmark_04.pdf           text  AI ok   PO ok  lines 1/1  fields 3/3 
+quickship_01.pdf         text  AI ok   PO ok  lines 1/1  fields 3/3 
+quickship_02.pdf         text  AI ok   PO ok  lines 1/1  fields 3/3 
+quickship_03.pdf         text  AI ok   PO ok  lines 2/2  fields 6/6 
+quickship_04.pdf         text  AI ok   PO ok  lines 1/1  fields 3/3 
+
+AI read 35/35 documents; PO number right on 35; field agreement 125/125 (100.0%)
