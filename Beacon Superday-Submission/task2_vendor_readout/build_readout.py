@@ -542,8 +542,9 @@ def write_xlsx(path, a, f, crosswalk_rows):
         ws.write_number(i, len(s) + 3, a["monthly_counts"].loc[m, "vendors"])
     n = len(mv)
     ws.write(n + 1, 0, "Total", H)
-    for c in range(1, len(s) + 2):
-        ws.write_formula(n + 1, c, "=SUM(%s2:%s%d)" % (chr(65 + c), chr(65 + c), n + 1), M)
+    totals = [mv[v].sum() for v in s.index] + [mv["Total"].sum()]
+    for c in range(1, len(s) + 2):   # cached value too, so previews (Outlook, Quick Look) show the total
+        ws.write_formula(n + 1, c, "=SUM(%s2:%s%d)" % (chr(65 + c), chr(65 + c), n + 1), M, round(float(totals[c - 1]), 2))
     ws.write(n + 3, 0, "Received value = net receipt qty (reversals netted, 1 unreversed duplicate excluded) x PO unit price, USD, by receipt month. "
                        "First and last months are partial.", W)
     ch = wb.add_chart({"type": "column", "subtype": "stacked"})

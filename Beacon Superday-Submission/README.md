@@ -27,9 +27,11 @@ python3 recon.py --confirmations /data/confirmations --pos /data/open_pos.csv \
 cd ../task2_vendor_readout
 python3 build_readout.py --erp /data/beacon_erp.db --out ../output
 
-# Tests (58 checks; the end-to-end ones use /data if present, or set BEACON_DATA=...)
-cd ../task1_confirmation_recon && python3 -m unittest discover -s tests -v
+# Tests (59 checks; the end-to-end ones read the case data from BEACON_DATA and are skipped without it)
+cd ../task1_confirmation_recon && BEACON_DATA=/data python3 -m unittest discover -s tests -v
 ```
+
+The zip ships the generated outputs but not the tool's memory file, so the first run above starts clean and reads all 35 PDFs (the 4 scans take a few seconds each). Runs after that remember what they have seen.
 
 `--erp` is optional for Task 1. Without it, the tool uses a default EUR rate and skips the vendor-history hints.
 

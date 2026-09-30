@@ -123,6 +123,13 @@ class Store:
         self.con.commit()
 
     @_locked
+    def relocate_document(self, h, path):
+        """The memory keeps the path a document was first read from. If the folder moved (or the
+        memory file was copied to another machine), point it at where the file is now."""
+        self.con.execute("update documents set stored_path=? where file_hash=? and stored_path<>?", (path, h, path))
+        self.con.commit()
+
+    @_locked
     def update_doc_status(self, h, status):
         self.con.execute("update documents set status=? where file_hash=?", (status, h))
         self.con.commit()
