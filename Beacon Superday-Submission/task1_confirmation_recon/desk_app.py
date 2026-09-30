@@ -61,8 +61,8 @@ def get_store():
 
 
 @st.cache_data(show_spinner=False)
-def parse_cached(path, h, manual_json, vendors_json):
-    """Reading PDFs (esp. OCR) is the slow part - do each file once."""
+def parse_cached(path, h, manual_json, vendors_json, ai_on=False):
+    """Reading PDFs (esp. OCR, AI) is the slow part - do each file once (per AI setting)."""
     d = recon.read_document(path, json.loads(vendors_json), manual=json.loads(manual_json) if manual_json else None)
     d["hash"] = h
     return d
@@ -84,7 +84,8 @@ def inputs_ok():
 def run_check(store):
     """The shared daily check (workflow.py) - same logic as the command line."""
     def reader(m, vendors, manual):
-        return parse_cached(m["stored_path"], m["file_hash"], json.dumps(manual) if manual else "", json.dumps(vendors))
+        return parse_cached(m["stored_path"], m["file_hash"], json.dumps(manual) if manual else "", json.dumps(vendors),
+                            os.environ.get("BEACON_AI_FALLBACK") == "1")
     hist = vendor_history(P_ERP, os.path.getmtime(P_ERP) if os.path.exists(P_ERP) else 0)
     st.session_state["last"] = workflow.check(store, workflow.Paths(P_POS, P_VEND, P_ERP), reader=reader, hist=hist)
     return st.session_state["last"]
@@ -396,6 +397,36 @@ def page_history(store, last):
                  column_config={k: st.column_config.ProgressColumn(k, format="percent", min_value=0, max_value=1)
                                 for k in ("On time vs our need", "Kept its own promise", "Promises later than we need")})
 
+    st.markdown("#### Ask about your vendors")
+    if not os.environ.get("ANTHROPIC_API_KEY"):
+        st.caption("Optional: set ANTHROPIC_API_KEY before starting the desk to ask questions in plain English. "
+                   "Answers come only from the computed readout tables and quote their figures.")
+        return
+    st.caption("Answers use only the cleaned, computed tables behind the vendor readout, and quote the figures they rely on. "
+               "Check anything important against Vendor_Readout.xlsx.")
+    if "advisor" not in st.session_state:
+        sys.path.insert(0, os.path.join(HERE, "..", "task2_vendor_readout"))
+        import ask
+        with st.spinner("Loading the vendor data..."):
+            st.session_state["advisor"] = ask.Advisor(P_ERP, os.path.join(EXPORTS, "confirmation_lines.csv")
+                                                      if os.path.exists(os.path.join(EXPORTS, "confirmation_lines.csv")) else None)
+        st.session_state["chat"] = []
+    for role, text in st.session_state["chat"]:
+        st.chat_message(role).markdown(text)
+    q = st.chat_input("e.g. Why should I call Continental first? What is at risk in the next two weeks?")
+    if q:
+        import anthropic
+        st.chat_message("user").markdown(q)
+        try:
+            with st.spinner("Thinking..."):
+                a = st.session_state["advisor"].ask(q)
+        except anthropic.APIStatusError as e:
+            a = "Claude API error %s: %s" % (e.status_code, e.message)
+        except anthropic.APIConnectionError:
+            a = "Could not reach the Claude API."
+        st.chat_message("assistant").markdown(a)
+        st.session_state["chat"] += [("user", q), ("assistant", a)]
+
 
 def page_forms(store, last):
     """Stop discrepancies at the source: Beacon's own acknowledgment form and supplier information pack."""
@@ -524,9 +555,16 @@ def page_settings(store, last):
         tol = st.number_input("Allowed price difference for EUR vendors after exchange rate (%)", 0.0, 5.0,
                               float(cfg["price_tol_fx_pct"]), step=0.1)
         name = st.text_input("Buyer name (signs the draft emails)", cfg["buyer_name"])
+        has_key = bool(os.environ.get("ANTHROPIC_API_KEY"))
+        ai = st.checkbox("Let Claude read PDFs no template can (new layouts, bad scans)", bool(cfg.get("ai_reader")),
+                         disabled=not has_key,
+                         help="Sends only unreadable PDFs to the Claude API. Check with IT first: aerospace paperwork can be "
+                              "export-controlled. Everything Claude reads goes to 'Needs your OK'." +
+                              ("" if has_key else " Needs ANTHROPIC_API_KEY set before starting the desk."))
         fixed = st.text_input("Check as of date (leave blank for today)", cfg.get("as_of", ""), help="YYYY-MM-DD")
         if st.button("Save rules", type="primary"):
-            for k, v in (("chase_after_days", chase), ("due_soon_days", soon), ("price_tol_fx_pct", tol), ("buyer_name", name)):
+            for k, v in (("chase_after_days", chase), ("due_soon_days", soon), ("price_tol_fx_pct", tol), ("buyer_name", name),
+                         ("ai_reader", bool(ai))):
                 store.save_setting(k, v)
             store.save_setting("as_of", fixed.strip())
             run_check(store)
@@ -557,6 +595,10 @@ def excel_bytes(store, last):
 
 def main():
     store = get_store()
+    if store.settings().get("ai_reader") and os.environ.get("ANTHROPIC_API_KEY"):
+        os.environ["BEACON_AI_FALLBACK"] = "1"
+    else:
+        os.environ.pop("BEACON_AI_FALLBACK", None)
     with st.sidebar:
         st.markdown("## 📋 Confirmation Desk")
         st.caption("Beacon Fasteners - Purchasing")

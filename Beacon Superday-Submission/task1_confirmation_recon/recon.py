@@ -18,6 +18,7 @@ import csv
 import glob
 import hashlib
 import os
+import pathlib
 import re
 import sqlite3
 from collections import defaultdict
@@ -78,7 +79,7 @@ def fmt_d(d):
 
 def load_pos(path):
     lines = []
-    with open(path, newline="") as f:
+    with open(path, newline="", encoding="utf-8-sig") as f:
         for r in csv.DictReader(f):
             lines.append(dict(
                 po_number=r["po_number"].strip(),
@@ -92,7 +93,7 @@ def load_pos(path):
 
 
 def load_vendors(path):
-    with open(path, newline="") as f:
+    with open(path, newline="", encoding="utf-8-sig") as f:
         return {r["vendor_id"]: r for r in csv.DictReader(f)}
 
 
@@ -100,7 +101,7 @@ def load_crosswalk(path):
     """Only APPROVED mappings are used for auto-matching."""
     xw = {}
     if path and os.path.exists(path):
-        with open(path, newline="") as f:
+        with open(path, newline="", encoding="utf-8-sig") as f:
             for r in csv.DictReader(f):
                 xw[(r["vendor_id"], r["vendor_pn"])] = r
     return xw
@@ -110,7 +111,7 @@ def load_fx(erp):
     """{('2026-05','EUR'): 1.0902, ...} from the ERP, else empty (-> default rate)."""
     if erp and os.path.exists(erp):
         try:
-            con = sqlite3.connect("file:%s?mode=ro" % erp, uri=True)
+            con = sqlite3.connect(pathlib.Path(erp).resolve().as_uri() + "?mode=ro", uri=True)
             return {(m, c): r for m, c, r in con.execute("select month, currency, rate_to_usd from fx_rate")}
         except sqlite3.Error:
             pass
@@ -532,7 +533,7 @@ def action_text(r):
 def write_extracted_csv(path, extracted):
     cols = ["po_number", "line_no", "vendor_pn", "part_id", "confirmed_qty", "confirmed_price", "currency",
             "promised_date", "doc_date", "source_file", "match_method", "match_confidence"]
-    with open(path, "w", newline="") as f:
+    with open(path, "w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=cols)
         w.writeheader()
         for e in extracted:
@@ -558,6 +559,8 @@ def read_document(path, vendors=None, manual=None):
             if ai:
                 ai["raw_text"] = d.get("raw_text", "")
                 d = ai
+            else:
+                d["warnings"].append("AI reader could not read it either: %s" % ai_reader.LAST_ERROR)
     d["file"] = os.path.basename(path)
     validate_doc(d)
     return d
@@ -636,7 +639,10 @@ def main():
     ap.add_argument("--as-of", help="YYYY-MM-DD (default: latest document date in the batch)")
     ap.add_argument("--out", default="output", help="where the workbook (and the memory file) go")
     ap.add_argument("--memory", help="memory file (default: <out>/confirmation_desk.db) - share it with the Desk app")
+    ap.add_argument("--ai", action="store_true", help="let Claude read PDFs no template can (needs ANTHROPIC_API_KEY)")
     a = ap.parse_args()
+    if a.ai:
+        os.environ["BEACON_AI_FALLBACK"] = "1"
     out = run(a.confirmations, a.pos, a.vendors, a.erp, a.crosswalk, a.as_of, a.out, a.memory)
     for k, v in out["stats"].items():
         print("  %-42s %s" % (k, v))

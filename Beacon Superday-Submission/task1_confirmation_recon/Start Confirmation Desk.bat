@@ -1,6 +1,7 @@
 @echo off
 REM Double-click to open the Confirmation Desk in your browser (Windows).
 cd /d "%~dp0"
+set "PYTHONUTF8=1"
 if not exist .venv\Scripts\streamlit.exe (
   echo First run: setting up, this takes a minute...
   py -3 -m venv .venv || python -m venv .venv

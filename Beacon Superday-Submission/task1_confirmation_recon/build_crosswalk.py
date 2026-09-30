@@ -46,7 +46,7 @@ def main():
     seen = {}
     for r in rows:
         seen.setdefault((r[0], r[2]), set()).add(r[3])
-    with open(a.out, "w", newline="") as f:
+    with open(a.out, "w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
         w.writerow(COLUMNS)
         for vid, vname, vpn, bpn, desc, n, first, last in rows:

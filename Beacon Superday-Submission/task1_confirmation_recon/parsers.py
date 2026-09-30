@@ -18,15 +18,30 @@ import fitz  # PyMuPDF
 # Text extraction
 # --------------------------------------------------------------------------
 
+def find_tesseract():
+    """Path to the Tesseract program, or None. Checks BEACON_TESSERACT, PATH, then the
+    default install folders (the Windows installer does not add itself to PATH)."""
+    import os
+    import shutil
+    cands = [os.environ.get("BEACON_TESSERACT"), shutil.which("tesseract"),
+             r"C:\Program Files\Tesseract-OCR\tesseract.exe", r"C:\Program Files (x86)\Tesseract-OCR\tesseract.exe",
+             "/opt/homebrew/bin/tesseract", "/usr/local/bin/tesseract", "/usr/bin/tesseract"]
+    return next((c for c in cands if c and os.path.isfile(c)), None)
+
+
 def extract_text(path):
-    """Return (text, source) where source is 'text' or 'ocr'."""
+    """Return (text, source) where source is 'text', 'ocr', or 'ocr_missing' (scan, but no Tesseract)."""
     doc = fitz.open(path)
     text = "\n".join(p.get_text("text", sort=True) for p in doc)
     if len(text.strip()) > 50:
         return text, "text"
     # No text layer -> scanned PDF -> OCR
+    exe = find_tesseract()
+    if not exe:
+        return "", "ocr_missing"
     import pytesseract
     from PIL import Image
+    pytesseract.pytesseract.tesseract_cmd = exe
     pages = []
     for p in doc:
         pix = p.get_pixmap(dpi=300)
@@ -264,6 +279,12 @@ def parse_file(path):
                      warnings=["Excel file is not a Beacon acknowledgment form%s - read by hand." % (" (%s)" % err if err else "")])
         return d
     text, source = extract_text(path)
+    if source == "ocr_missing":
+        d = _doc(template="scanned", doc_type="UNREADABLE",
+                 warnings=["Scanned PDF, but the Tesseract OCR program is not installed - install it (see README) "
+                           "or type the lines in."])
+        d["text_source"], d["raw_text"] = source, ""
+        return d
     for sig, fn in TEMPLATES:
         if sig.search(text):
             try:

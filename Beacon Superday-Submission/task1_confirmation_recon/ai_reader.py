@@ -6,6 +6,7 @@ export-controlled (ITAR/EAR) or customer-confidential. Sending a PDF to a cloud
 API is an IT / compliance decision, so this only runs when an administrator sets
 
     BEACON_AI_FALLBACK=1        (and Anthropic credentials, e.g. ANTHROPIC_API_KEY)
+or passes --ai to recon.py, or ticks the switch in the Desk app's Settings.
 
 What it does: sends ONE unreadable PDF to Claude and asks for the same fields
 our parsers extract, as schema-validated JSON. What it never does: decide
@@ -21,6 +22,7 @@ import re
 from datetime import datetime
 
 MODEL = "claude-opus-5-5"
+LAST_ERROR = None   # why the last extract() returned None, shown to Lisa on the document
 
 SCHEMA = {
     "type": "object",
@@ -104,6 +106,8 @@ def to_doc(data, vendors):
 
 def extract(path, vendors=None, client=None):
     """Returns a normalized doc, or None if the call fails (the doc then stays 'read by hand')."""
+    global LAST_ERROR
+    LAST_ERROR = None
     import anthropic
     client = client or anthropic.Anthropic()
     with open(path, "rb") as f:
@@ -120,14 +124,80 @@ def extract(path, vendors=None, client=None):
                 {"type": "text", "text": PROMPT}]}],
         )
     except anthropic.RateLimitError:
+        LAST_ERROR = "rate limited - try again in a minute"
         return None
-    except anthropic.APIStatusError:
+    except anthropic.AuthenticationError:
+        LAST_ERROR = "API key rejected"
+        return None
+    except anthropic.APIStatusError as e:
+        LAST_ERROR = "API error %s: %s" % (e.status_code, e.message)
         return None
     except anthropic.APIConnectionError:
+        LAST_ERROR = "could not reach the API"
         return None
     if response.stop_reason in ("refusal", "max_tokens"):
+        LAST_ERROR = "model stopped (%s)" % response.stop_reason
         return None
     text = next((b.text for b in response.content if b.type == "text"), None)
     if not text:
+        LAST_ERROR = "empty response"
         return None
     return to_doc(json.loads(text), vendors)
+
+
+# --------------------------------------------------------------------------
+# Benchmark: how well does the AI read documents we already read deterministically?
+# --------------------------------------------------------------------------
+
+def benchmark(folder, vendors_csv, limit=None):
+    """Read every PDF with BOTH the template parser and Claude, and compare field by field.
+    This is the evidence for (or against) trusting the AI reader on new layouts."""
+    import glob
+    import parsers
+    import recon
+    vendors = recon.load_vendors(vendors_csv)
+    rows, files = [], sorted(glob.glob(os.path.join(folder, "*.pdf")))[:limit]
+    for f in files:
+        ref = parsers.parse_file(f)
+        ai = extract(f, vendors)
+        r = dict(file=os.path.basename(f), source=ref.get("text_source"), ai_ok=ai is not None, error=LAST_ERROR,
+                 po_match=bool(ai) and ai["po_number"] == ref["po_number"], lines_ref=len(ref["lines"]),
+                 lines_ai=len(ai["lines"]) if ai else 0, fields=0, agree=0, diffs=[])
+        if ai:
+            by_line = {(l.get("line_no") or i): l for i, l in enumerate(ai["lines"], 1)}
+            for i, l in enumerate(ref["lines"], 1):
+                m = by_line.get(l.get("line_no") or i)
+                for k in ("qty", "unit_price", "promise_date"):
+                    if l.get(k) is None:
+                        continue
+                    r["fields"] += 1
+                    got = m.get(k) if m else None
+                    same = got == l[k] or (isinstance(got, float) and isinstance(l[k], float) and abs(got - l[k]) < 1e-6)
+                    r["agree"] += same
+                    if not same:
+                        r["diffs"].append("L%s %s: parser %s / AI %s" % (l.get("line_no") or i, k, l[k], got))
+        rows.append(r)
+        print("%-24s %-5s %s  PO %s  lines %d/%d  fields %d/%d %s" % (
+            r["file"], r["source"], "AI ok " if r["ai_ok"] else "AI FAIL", "ok" if r["po_match"] else "--",
+            r["lines_ai"], r["lines_ref"], r["agree"], r["fields"], ("; ".join(r["diffs"][:2]) or r["error"] or "")))
+    ok = [r for r in rows if r["ai_ok"]]
+    f_all, f_ok = sum(r["fields"] for r in ok), sum(r["agree"] for r in ok)
+    print("\nAI read %d/%d documents; PO number right on %d; field agreement %d/%d (%.1f%%)" % (
+        len(ok), len(rows), sum(r["po_match"] for r in ok), f_ok, f_all, 100.0 * f_ok / f_all if f_all else 0))
+    return rows
+
+
+if __name__ == "__main__":
+    import argparse
+    ap = argparse.ArgumentParser(description="Read a vendor PDF with Claude, or benchmark Claude against the template parsers.")
+    ap.add_argument("pdf", nargs="?", help="one PDF to read")
+    ap.add_argument("--benchmark", help="folder of PDFs to compare AI vs template parsers")
+    ap.add_argument("--vendors", required=True, help="vendor_master.csv")
+    ap.add_argument("--limit", type=int)
+    a = ap.parse_args()
+    if a.benchmark:
+        benchmark(a.benchmark, a.vendors, a.limit)
+    elif a.pdf:
+        import recon
+        d = extract(a.pdf, recon.load_vendors(a.vendors))
+        print(json.dumps(d, default=str, indent=2) if d else "Could not read: %s" % LAST_ERROR)

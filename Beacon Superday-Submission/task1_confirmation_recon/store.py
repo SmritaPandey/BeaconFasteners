@@ -155,7 +155,7 @@ class Store:
         if not os.path.exists(path):
             return 0
         n = 0
-        with open(path, newline="") as f:
+        with open(path, newline="", encoding="utf-8-sig") as f:
             for r in csv.DictReader(f):
                 cur = self.con.execute("select 1 from crosswalk where vendor_id=? and vendor_pn=?",
                                        (r["vendor_id"], r["vendor_pn"])).fetchone()
@@ -200,7 +200,7 @@ class Store:
     def export_crosswalk(self, path):
         rows = [dict(r) for r in self.con.execute("select * from crosswalk order by vendor_id, vendor_pn")]
         if rows:
-            with open(path, "w", newline="") as f:
+            with open(path, "w", newline="", encoding="utf-8") as f:
                 w = csv.DictWriter(f, fieldnames=list(rows[0]))
                 w.writeheader()
                 w.writerows(rows)
